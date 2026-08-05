@@ -1,8 +1,12 @@
-# Current App State — Weighted Media Cost Backfill
+# Current App State — M.E.R.I.T APP
 
 > This document describes the implementation **as it stands today**, not the original spec (`instructivo_backfill_app.md`) nor the first queue/cache addendum. Where current behavior differs from those earlier versions, it is called out explicitly.
 >
 > Generated from the real code in `app.py` on 2026-07-19, after integrating `addendum_tv_backfill.md` (TV support + one-backfill-per-subset lock) and translating the entire codebase, UI, and documentation to English.
+>
+> **Updated 2026-08-05** — major revision. Digital now splits into three sub-types (Social / Reserve / Programmatic) with their own filter sets, the single hardcoded weighting was replaced by six selectable operations, several filters accept multiple values, and the subset lock was rebuilt on row overlap. Sections 11–13 cover all of it; §3's weighting formula still describes the `MC_WEIGHTED` / `IMPR_WEIGHTED` operations, but is no longer the only path.
+>
+> **Updated 2026-08-05 (same day, second follow-up)** — the single-purpose app became **M.E.R.I.T APP** (Media Evaluation, Reconciliation & Integrity Tool), a shell with a home menu mounting multiple independent tools. The former app.py became `tools/rroi_backfill.py` unchanged in substance; a new **Data Caveats Generator** tool was added (ported from a standalone script). See §15.
 
 ---
 
@@ -10,19 +14,30 @@
 
 ```
 backfill-media-cost-app/
-├── app.py                     # Full Streamlit app (everything lives in one script)
-├── requirements.txt           # streamlit, pandas, openpyxl (no pinned versions)
-├── .venv/                     # Local virtual environment (not versioned)
-├── test_logic.py              # Pure tests: Digital/TV formula, lock, build_preview, remove-from-queue
-├── test_apptest_flow.py       # End-to-end tests via streamlit.testing.v1.AppTest (Digital+TV, queue, lock, mixed execution)
-├── test_apptest_cache.py      # Correctness/invalidation tests for the export cache
-├── USER_GUIDE.md              # Non-technical user manual
-└── estado_actual_app.md       # This document
+├── app.py                          # M.E.R.I.T. shell: home menu + tool registry/mounting only
+├── tools/
+│   ├── __init__.py
+│   ├── rroi_backfill.py            # The entire backfill tool (formerly all of app.py) — see §2-14
+│   ├── data_caveats.py             # Data Caveats Generator — see §15
+│   └── data_caveats_template.xlsx  # Bundled default Data Caveat Log template (25 KB)
+├── requirements.txt                # streamlit, pandas, openpyxl (no pinned versions)
+├── .venv/                          # Local virtual environment (not versioned)
+├── test_logic.py                   # RROI Backfill: taxonomy, operations, multi-value subsets, lock, build_preview
+├── test_apptest_flow.py            # RROI Backfill: end-to-end via streamlit.testing.v1.AppTest
+├── test_apptest_cache.py           # RROI Backfill: export-cache correctness/invalidation
+├── test_real_file.py               # RROI Backfill: the real 150k-row workbook through taxonomy + every operation
+├── test_data_caveats.py            # Data Caveats: pipeline functions + a real write against the bundled template
+├── test_apptest_home.py            # Home menu navigation + Data Caveats settings/generate/download, via AppTest
+├── USER_GUIDE.md                   # Non-technical user manual — RROI Manual Backfill
+├── DATA_CAVEATS_GUIDE.md           # Non-technical user manual — Data Caveats Generator
+└── estado_actual_app.md            # This document
 ```
 
 **Relevant installed versions** (`.venv`): `streamlit==1.59.2`, `pandas==3.0.3`, `openpyxl==3.1.5`.
 
-No git repository initialized in this folder. No `README.md` file.
+Git repository hosted on GitHub at `https://github.com/CristianBarbosaT/merit-app` (branch `main`). No `README.md` file. **The `tools/` package and its tests are new, uncommitted work** — not yet pushed.
+
+**Sections 2–14 below describe `tools/rroi_backfill.py`** exactly as they described `app.py` before this restructure (only the module changed, not the code or behavior). §15 covers the new shell and the Data Caveats Generator.
 
 ---
 
@@ -213,4 +228,206 @@ Four issues reported after real usage, all fixed with accompanying regression te
 2. **Impressions must always be whole numbers.** `resolve_new_values` now rounds any backfilled `Impressions` result via `round_preserving_sum` — a largest-remainder (Hare-Niemeyer) allocation that rounds every row to an integer while keeping the total exactly equal to the target, rather than naive per-row rounding (which can drift the sum off by a few units). This applies uniformly regardless of mode, though in practice only TV can ever target `Impressions`. Digital is unaffected (it never backfills `Impressions`).
 3. **App title changed** from "Weighted Media Cost Backfill" to **"Weighted Backfills App"** (both `st.set_page_config(page_title=...)` and the on-page `st.title(...)`).
 4. **Month dropdown now sorts chronologically, not alphabetically.** `sorted(["April 2026", "December 2026", "February 2026"])` previously put them in that exact (wrong) order because it sorted the label strings. New helper `sorted_month_labels(df)` sorts by the underlying `Date` column instead (one row per unique `Month_Label`, ordered by date), used by both `build_dropdown_options_digital` and `build_dropdown_options_tv`.
-5. **"Preview" required two clicks after switching "Field to backfill".** Root cause: the TV target `st.number_input`'s label is dynamic (`f"Target {target_field}"`, i.e. "Target Media_Cost" vs "Target Impressions"), and without an explicit `key=`, Streamlit derives a widget's identity partly from its label — so relabeling it makes Streamlit treat it as a brand-new widget and silently reset it to 0. Fix: added a stable `key="tv_target_value"` so the widget's identity (and stored value) no longer depends on which field is selected. Verified with an AppTest regression that types a value under "Media_Cost", switches to "Impressions" *without submitting*, and confirms the value survives and the very first "Preview" click uses it correctly.
+5. **"Preview" required two clicks after switching "Field to backfill".** Root cause: the TV target `st.number_input`'s label is dynamic (`f"Target {target_field}"`, i.e. "Target Media_Cost" vs "Target Impressions"), and without an explicit `key=`, Streamlit derives a widget's identity partly from its label — so relabeling it makes Streamlit treat it as a brand-new widget and silently reset it to 0. Fix: added a stable `key="tv_target_value"` so the widget's identity (and stored value) no longer depends on which field is selected. Verified with an AppTest regression that types a value under "Media_Cost", switches to "Impressions" *without submitting*, and confirms the value survives and the very first "Preview" click uses it correctly. (The widget now uses `key=f"target_value_{target_field}"`, which keeps that property while giving each field its own remembered value.)
+
+---
+
+## 11. Digital sub-types: Social / Reserve / Programmatic (2026-08-05)
+
+### The rule
+
+A Digital row's sub-type is derived from a token inside `Package_Placement_Name`, plus — for the `UNE` ones — whether the partner is a social platform:
+
+| Sub-type | Rule |
+|---|---|
+| **Programmatic** | `Package_Placement_Name` contains `UUT` |
+| **Social** | contains `UNE` **and** `Raw_Partner` is a social platform |
+| **Reserve** | contains `UNE` **and** it is not |
+| *Unclassified* | neither token — cannot be backfilled through the app |
+
+Social platforms are `FACEBOOK.COM`, `TIKTOK`, `REDDIT.COM`, `PINTEREST`, `SNAP INC FK SNAPCHAT`, plus **any partner whose name contains `X CORP`**.
+
+Computed once per file in `prepare_dataframe` into a `Digital_Subtype` column (rather than re-running `str.contains` on every filter operation), and never applied to TV rows.
+
+### Validated against the real file before building
+
+| Bucket | Rows |
+|---|---|
+| Programmatic | 85,182 |
+| Social | 54,468 |
+| Reserve | 8,033 |
+| Unclassified | 312 |
+
+The partition is clean: **0 rows contain both tokens**, so rule ordering never actually matters on this data (the code still resolves `UUT` first, deliberately). The 312 unclassified rows are the bonus / added-value lines whose placement is free text — e.g. `Awareness AV BONUS $4,608.39` — the same population already flagged in the structure analysis. The app shows a persistent `st.info` naming that count so it is never silently ignored.
+
+**The `X CORP` match is case-insensitive on purpose.** The real file contains both `CNBC.COM - X CORP` and `FOXSPORTS.COM - X Corp`; a case-sensitive match would have silently classified the latter's 61 rows as Reserve. There is a dedicated test for exactly this row.
+
+### Filters per sub-type
+
+| Sub-type | Filters |
+|---|---|
+| **Social** (by Package) | Month, Campaign, Partner, Package, CCD JTBD, Audience, Breakout — the last three are required, per spec |
+| **Social** (by Placement) | Month, Campaign, Partner, Placement — exactly one placement, nothing else needed |
+| **Reserve** | Month, Campaign, **Partner\***, **Audience\*** |
+| **Programmatic** | Month, Campaign, Partner, **Channel\***, Package, **CCD JTBD\***, **Audience\*** |
+
+`*` = accepts one, several, or all values (`st.multiselect`, defaulting to everything selected so "all" costs no clicks). Everything else is exactly one value.
+
+Social's Package-vs-Placement choice is a radio **outside** the filter form, so switching it re-renders the right filter set immediately.
+
+All of this is declarative: `FILTER_SPECS` maps each sub-type to a list of `(label, dataframe column, options key, is_multi)` tuples, and a single generic `compute_subset` walks that list — `isinstance(value, (list, tuple, set))` decides between `.isin(...)` and `==`. Adding or moving a filter is a one-line change to the spec, with no new subset function.
+
+---
+
+## 12. The six operations (2026-08-05)
+
+The old behavior — Digital always writes `Media_Cost` weighted by `Impressions` — is now just one of six choices. The analyst picks a **field** and then an **operation**:
+
+| Operation | Writes | Needs a target? | What it does |
+|---|---|---|---|
+| `MC_WEIGHTED` | Media_Cost | yes | Splits the target proportionally to each row's Impressions *(the original behavior)* |
+| `MC_EVEN` | Media_Cost | yes | `target / number of rows` on every row |
+| `MC_COPY_RECONCILED` | Media_Cost | **no** | Copies `Delivered Spend (Reconciled)` row by row |
+| `MC_COPY_PRISMA` | Media_Cost | **no** | Copies `Delivered Spend (Prisma)` row by row |
+| `IMPR_WEIGHTED` | Impressions | yes | Splits the target proportionally to the **current Impressions**, so the daily delivery shape is preserved; falls back to weighting by `Media_Cost` only when the subset has no impressions at all |
+| `IMPR_COPY_WPU` | Impressions | **no** | Copies `Weighted Planned Units` row by row |
+
+Declared in one `OPERATIONS` dict (field, label, `needs_target`, optional `source` column, help text) and dispatched by a single pure function, `compute_new_values(subset, operation_id, target_value, mode)`, returning `(Series, None)` or `(None, error)`. Both the preview and the queue execution call it, so they can never drift apart.
+
+**Design notes:**
+
+- **Copy operations take no target at all.** `needs_target: False` drives both the validation (the positive-target check is skipped entirely) and the UI (the number input is not rendered; a caption names the source column instead). `target_value` is stored as `None` and shown as `—`.
+- **A missing source column fails cleanly**, both in the UI (the operation is refused with a message before the form renders) and in `compute_new_values`, rather than raising a `KeyError`.
+- **Impressions are always whole numbers**, on every path: `IMPR_WEIGHTED` goes through `round_preserving_sum` (largest-remainder, exact-sum) and `IMPR_COPY_WPU` rounds the copied values.
+- **`IMPR_WEIGHTED` weighting by `Impressions` itself is intentional**, not a bug: re-scaling a column by its own proportions is exactly what "keep the daily trend, change the total" means.
+- **The operations apply to TV as well as Digital.** The spec only described them under Digital, but TV already had a Media_Cost/Impressions choice and the operations are field-specific, not mode-specific — restricting them to Digital would have been an arbitrary inconsistency. This is additive: nothing about TV's previous behavior changed. **Worth confirming this is the intended scope.**
+
+---
+
+## 12b. Target = 0 unified across modes (2026-08-05, same-day follow-up)
+
+**Reported bug**: Digital rejected a target of `0` outright — `build_preview` threw "The target must be a positive number." before the subset was even computed, regardless of the operation. Reported specifically for zeroing out a miscoded cost, which is a legitimate backfill (the target isn't unknown or missing, it's deliberately zero).
+
+**Fix, two call sites:**
+
+1. `build_preview`'s sign check no longer branches on `mode`. Both Digital and TV now accept `target_value >= 0` and reject only genuinely negative values, with the same message ("The target must be a number greater than or equal to 0.") either way. This is the one that was actually blocking the report — `MC_EVEN`/`MC_WEIGHTED` at target 0 is mathematically fine on any valid (non-zero) weight basis; nothing downstream needed the mode restriction, it was purely this upfront gate.
+2. `compute_new_values`'s zero-weight-basis exception — previously "TV-only: a zero target across a zero weight basis is unambiguous, Digital keeps the strict original behavior" (§12) — now applies regardless of mode: `if target_value == 0: new_values = 0 for every row`, no `mode == "TV"` check. Splitting zero across zero delivery is exactly as unambiguous for Digital as it is for TV; the original mode restriction was a deliberate scope decision in the TV addendum, not a mathematical necessity, and kept it strict only because Digital's zero-basis case hadn't come up yet. **This is a deviation from that documented decision — worth confirming it's wanted**, though it only ever changes behavior in the narrow case where a Digital subset already has 0 total Impressions/Media_Cost *and* the analyst explicitly types a target of 0 (previously blocked with "0 total X. There is no basis to distribute", now succeeds with all rows set to 0).
+
+A non-zero target on a zero weight basis is still blocked on both modes — only the target-is-exactly-0 case changed.
+
+---
+
+## 13. The lock, rebuilt on row overlap (2026-08-05)
+
+The previous lock compared *filter values* (`subset_key`) to decide whether two backfills targeted the same subset. Multi-value filters break that: selecting partners `[A, B]` and then `[B, C]` produces two different keys but overlapping rows, so the old check would have waved it through and **silently written to B's rows twice**.
+
+`find_lock_conflict(indices, queue, applied)` now compares the actual dataframe row indices and reports a conflict on any intersection. Queue items carry their `indices`; applied backfills are recorded in a new `st.session_state.applied_indices` list (kept separate from `log` so the exported CSV stays clean). This is strictly stronger than the old rule — it still catches every case the key comparison did, plus partial overlaps — and it removed `subset_key` entirely.
+
+The error message names the offender (`#3 (Digital · Reserve · …), still queued` / `…, already applied in this session`) instead of just saying the subset is taken.
+
+### What the preview / queue / log now record
+
+Every one of them carries the operation, per the spec's "el nivel de detalle del backfill debe contener cuál fue el tipo de operación":
+
+- **Preview** — a heading with the full operation label (`Digital · Social · Media_Cost · Weighted by impressions`) above the four scorecards. The third card is now **Resulting sum** rather than "Target sum", since for a copy operation there is no target to show but there is always a result.
+- **Queue table** — `Mode`, `Type` (sub-type), `Field`, `Operation` columns, then one column per filter that item actually used (multi-value selections render as `3 selected` past three values), then Current Sum / Target / Resulting Sum / Delta.
+- **Execution results and the CSV log** — same `Mode` / `Type` / `Field` / `Operation` columns, with `Target_Value` left blank for copy operations.
+
+### Session state changes
+
+| Key | Change |
+|---|---|
+| `applied_indices` | **New.** `[{"label": str, "indices": [int, ...]}]` — the applied side of the lock. |
+| `queue` items | Now carry `subtype`, `operation`, `operation_label`, `resulting_sum` and `indices`; `weight_field` is gone (the operation implies it). |
+| `preview_result` | Same additions. |
+| `dropdown_options` | **Shape changed** from `{"DIGITAL": ..., "TV": ...}` to one entry per Digital sub-type plus `"TV"`: `{"Social": {...}, "Reserve": {...}, "Programmatic": {...}, "TV": {...}}`. |
+| `mode_selector` | Joined by `subtype_selector`, `social_select_by`, `field_selector` and `operation_selector_{field}` widget keys. |
+
+### UI ordering, and one deviation
+
+The screen is now three numbered steps: **1 · What are you backfilling?** (mode → sub-type → package/placement), **2 · How should the values be calculated?** (field → operation), **3 · Which rows?** (the filter form, the target when the operation needs one, and Preview).
+
+The spec put the operation choice *after* the filters. It sits before them instead, because the operation decides whether a target input is rendered at all, and Streamlit only re-renders a form's contents on submit — putting the operation inside the form would reproduce the exact "click Preview twice" bug fixed in §10.5.
+
+---
+
+## 14. Cascading, numbered filters (2026-08-05)
+
+### What changed
+
+Filters are now **numbered** (`1 · Month`, `2 · Campaign`, …) and **cascade**: each one only offers the values that still exist given everything chosen above it, and everything below the first unanswered filter is locked behind a disabled `Pick <parent> first` placeholder.
+
+Concretely, the case that prompted it: on Social, `CCD JTBD` / `Audience` / `Breakout` show nothing at all until a Package is picked, and then only that package's real values. On the production file that takes Audience from **46 options down to 2**, and CCD JTBD from 4 to 1.
+
+The cascade applies to every sub-type and to TV, not just Social — the numbering implies an order, so honouring it everywhere is the consistent read.
+
+### `st.form` had to go
+
+This is a real trade-off, and it reverses an earlier decision. A `st.form` deliberately suppresses reruns until submit — which is exactly what made the app feel fast when picking filters, but also means a filter's options **cannot** react to a sibling's value. Cascading and `st.form` are mutually exclusive.
+
+Measured before switching, on the real 149,993-row file: recomputing the whole cascade costs **58–115 ms**, well inside normal Streamlit rerun overhead. The expensive work (`compute_subset`, the operation math) still only happens on the Preview click, so the per-keystroke cost is just re-deriving option lists.
+
+Two consequences handled explicitly:
+
+- **Single-selects now start unanswered** (`index=None` + placeholder) rather than defaulting to the first option. Without that there is nothing to gate on — a selectbox always has a value, so the dependent filters could never be "waiting for a package".
+- **A preview can go stale**, since there is no submit boundary any more. `selection_signature(...)` records exactly what a preview was computed for, and the preview is discarded the moment any filter, operation or target moves — so a set of scorecards can never sit next to filters it doesn't describe.
+
+### Keeping widget state consistent as options change
+
+Two helpers run before each cascading widget renders, because Streamlit raises if a widget's stored value isn't in its own option list:
+
+- `_forget_stale_single(key, choices)` — drops a stored single-select value that the parent change has made unavailable, so the widget comes back unselected instead of erroring.
+- `_reset_multi_on_new_choices(key, choices)` — a multi-value filter means "all of what's available", so when the available set itself changes it re-selects everything rather than keeping the old intersection (which would silently leave newly-valid values unselected).
+
+Widget keys are `filters_{mode}_{subtype}_{select_by}_{options_key}` (previously prefixed `filters_form_`), and locked placeholders add a `_locked` suffix so they never collide with the real widget's stored value.
+
+### Testing
+
+`test_apptest_flow.py` proves the narrowing is genuine rather than incidental: the fixture deliberately contains a **second** Social package (`PKG_SOCIAL2`) on the same partner carrying a JTBD and an audience the first one doesn't have. The test asserts CCD JTBD drops `Consideration` and Audience drops `AudZ` once `PKG_SOCIAL` is chosen — without that second package, narrowing by package would shrink nothing and the test would pass while proving nothing. It also checks the numbered labels, that filters start unanswered, and that a locked filter offers an empty option list.
+
+---
+
+## 15. M.E.R.I.T APP: multi-tool shell + Data Caveats Generator (2026-08-05)
+
+### Why
+
+The request was explicit: turn this from a single-purpose app into a shell that can host several tools, starting with a home menu, the existing backfill tool renamed "RROI Manual Backfill", and a new "Data Caveats Generator" ported from a standalone script (`generar_data_caveats.py`, previously run by hand against a local folder).
+
+### The shell (`app.py`)
+
+`app.py` no longer contains any backfill logic — it's now ~50 lines: `st.set_page_config` (called exactly once, here, since Streamlit requires that), a `TOOLS` registry (`{key: {"label", "description", "render"}}`), and a home screen (`render_home()`) with the M.E.R.I.T title, subtitle, and one bordered `st.container` per tool with an "Open" button. `st.session_state.active_tool` (`None` / `"backfill"` / `"caveats"`) decides whether `render_home()` or `TOOLS[active_tool]["render"]()` runs. Adding a future tool means writing its module and adding one entry to `TOOLS` — no other change to `app.py`.
+
+**Why a plain `session_state` flag instead of Streamlit's native multipage app support** (`st.navigation`/`st.Page`, or a `pages/` folder): native multipage puts each tool behind its own URL and a persistent sidebar nav, which is a reasonable alternative, but the ask was specifically a **menu you land on and choose from** — closer to a landing page than a permanently-visible nav rail. The session-state-flag approach was already proven (it's exactly how the backfill tool's own upload → work screen transition already worked), so it was reused rather than introducing a second navigation paradigm into the same app.
+
+**Each tool is a separate module with its own `init_state()`/`render()`** (`tools/rroi_backfill.py`, `tools/data_caveats.py`). This was a deliberate namespacing decision: the backfill tool already used simple session-state keys (`df`, `log`, `queue`, …); rather than risk collisions as more tools get added, the Data Caveats tool's keys are all prefixed `caveats_` (`caveats_data`, `caveats_results`, …) from day one. The backfill tool's existing keys were **not** renamed — no functional need (nothing else uses those names) and renaming them would have been pure churn against a large, already-tested module.
+
+Every tool renders a **"← Back to menu"** button at the very top of `render()`, which sets `active_tool = None` and reruns.
+
+### Data Caveats Generator (`tools/data_caveats.py`)
+
+Detects **"Null impressions"** (cost present, impressions never, for a placement's whole month) and **"Null cost"** (the reverse) at placement-month grain, and writes one Data Caveat Log per brand from the corporate template — same detection rules and same output shape as the original script, entirely in-memory (no disk I/O) so it runs as a normal upload/download Streamlit flow instead of a folder-watching script.
+
+**What ported unchanged (business logic):**
+- The two caveat patterns and their exact English labels (`Null value check` / `Leave as is - data is correct` / `Null impressions` / `Null cost`) — these are **fixed values from the template's own dropdown lists** (columns A and I, `Type` and `Month`), so they cannot be translated or reworded without breaking the template's data validation.
+- Detection at **placement-month** grain (`GROUP_KEYS = [Brand, Category, Channel, Campaign, Site, Placement, Retailer, Period]`), with the two detection modes (`month` = only the month total; `row` = also flags an individual day matching the pattern even if the month total is complete).
+- The validation pass (`validate()`): coarse-grain channels (no Campaign/Placement, e.g. TV), masked single-day gaps, zero-total-but-active (GRPs/Video Views) lines, negative values, and brands with zero caveat lines.
+- `find_log_table` / the template-writing mechanics: locate the table via `ws.tables`, clear the template's example rows, write styled cells, shrink the table's `ref` and the two dropdown validations' (`A`, `I`) row range to match the actual row count — including the **empty-caveats case**, where the table still needs exactly 1 formatted (blank) row rather than 0, since an Excel table can't have zero data rows.
+- `build_sheet_name`'s 31-character Excel tab-name limit handling (drop category first, then trim the brand — never trim the INC#).
+- `BRAND_NAME_OVERRIDES = {"TRESemme": "Tresemme"}` — cosmetic-only, output file name/tab, never affects detection. Kept hardcoded, consistent with how the backfill tool already hardcodes this same client's domain rules (the Social/Reserve/Programmatic taxonomy).
+
+**What changed for the in-app flow:**
+- **Folder scanning → file uploader.** `st.file_uploader(..., accept_multiple_files=True)` replaces `glob.glob(INPUT_FOLDER)`. Each file is read via `.getvalue()` (bytes) and cached with `@st.cache_data` keyed on those bytes, so re-running "Generate" after only changing a setting doesn't re-parse a 10 MB file.
+- **Template file → bundled default + optional override.** `tools/data_caveats_template.xlsx` (a copy of the corporate template, 25 KB, small enough to ship in the repo) is used unless the user uploads their own via an "Advanced" expander — mirrors the self-service default pattern already used elsewhere in this project (bundle a working default, let power users override it).
+- **`SHEET_SELECTION` simplified to a fixed "last sheet with all required columns."** The original script supported 4 selection strategies plus per-file overrides; every real sample file observed puts the working data on the right-most tab (a blank "Sheet1" often comes first), so the other strategies were dropped as unnecessary configuration surface for v1. If a real file needs a different rule, this is the first place to extend.
+- **`(year, month)` config tuples → a detected-months picker.** Instead of typing `RANGE_START`/`RANGE_END`, the app reads the periods actually present across the uploaded files and offers them as an `st.select_slider` (or, with only one month present, a caption — a slider needs two distinct points). Removes an entire class of typo ("configured a range that doesn't match the file") that the original script could silently produce.
+- **Console + summary.txt → on-screen results + a ZIP.** Every `log(...)` line, the per-issue console block, and the final `RESUMEN` table now render as Streamlit elements (`st.dataframe`, colored callouts by level). Since a web app has no output folder, the per-brand `.xlsx` files, the validation report (`.xlsx`, if validation ran), and the summary (`.txt`) are bundled into one ZIP via a single `st.download_button`, rather than several download buttons or a virtual folder.
+- **Levels translated to English.** The original script's `AVISO` level is now `WARNING` (`ERROR`/`FLAG`/`INFO` were already English) — purely an internal label used for sorting/coloring issues, never written into the output template.
+- **Dropped for v1** (scope cuts, not fixed to be impossible): per-file `SHEET_OVERRIDES`; `OVERWRITE_EXISTING` (meaningless without a persisted output folder); separate `WRITE_VALIDATION_REPORT`/`WRITE_SUMMARY_FILE` toggles (both are now unconditionally included in the ZIP whenever validation runs, since there's no per-file disk-write cost to gate in a web flow); the console `VALIDATION_PREVIEW_ROWS` truncation (an `st.dataframe` scrolls natively, so the full detail table is shown instead of a fixed preview).
+
+### Testing
+
+`test_data_caveats.py` exercises the pure pipeline directly against small synthetic delivery files built in-memory (`pd.DataFrame(...).to_excel(BytesIO())`, matching the real RROI column schema): reading/cleaning, the two caveat patterns at month grain, the masked-day case under both detection modes, all five `validate()` findings in isolation, `filter_by_range` actually filtering, and — importantly — **a real write against the actual bundled template**, asserting the output table's `ref` shrinks to exactly the right number of rows (including the zero-caveats case) and that the written cells match. `test_apptest_home.py` covers the shell itself (home menu renders both tools, each opens and returns home) and the Data Caveats settings → generate → download flow through real widgets, seeding `caveats_data` with the output of the real `read_delivery_file` (upload simulation isn't possible with `AppTest`, same limitation noted throughout this project) rather than a hand-built stand-in for its shape.
+
+### Documentation
+
+`USER_GUIDE.md` (RROI Manual Backfill) now opens with a pointer to the home menu and to the Data Caveats guide. A new `DATA_CAVEATS_GUIDE.md`, matching the same non-technical style, covers the second tool end to end — kept as a **separate file** rather than folded into `USER_GUIDE.md`, since the two tools have unrelated audiences/workflows and the code itself is already split the same way (one module per tool).

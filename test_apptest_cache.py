@@ -3,31 +3,33 @@ import pandas as pd
 from io import BytesIO
 from streamlit.testing.v1 import AppTest
 
-from app import prepare_dataframe, build_dropdown_options_digital
+from tools.rroi_backfill import prepare_dataframe, build_dropdown_options_subtype, DIGITAL_SUBTYPES
 
 rows = []
 for i in range(3000):
     rows.append((
         "2026-06-01", "Digital Social", "CampA_Secondary", "PINTEREST", "P3GHJCX_UNE_NEX_038",
-        "Awareness", "Crystallizer Queen", "Brand Say", 1000 + i, 0.0,
+        "P3GHJCX_UNE_NEX_038_PINTEREST_1x1", "Awareness", "Crystallizer Queen", "Brand Say",
+        1000 + i, 0.0,
     ))
 
 df = pd.DataFrame(rows, columns=[
     "Date", "Channel", "Prisma_Campaign_Secondary", "Raw_Partner", "Package Name",
-    "CCD JTBD", "Audience", "Breakout", "Impressions", "Media_Cost",
+    "Package_Placement_Name", "CCD JTBD", "Audience", "Breakout", "Impressions", "Media_Cost",
 ])
 df = prepare_dataframe(df)
 
 at = AppTest.from_file("app.py")
+at.session_state["active_tool"] = "backfill"
 at.session_state["df"] = df.copy()
 at.session_state["filename"] = "test.xlsx"
 at.session_state["sheet_name"] = "Raw"
-at.session_state["dropdown_options"] = {
-    "DIGITAL": build_dropdown_options_digital(df),
-    "TV": None,
-}
+dropdown_options = {s: build_dropdown_options_subtype(df, s) for s in DIGITAL_SUBTYPES}
+dropdown_options["TV"] = None
+at.session_state["dropdown_options"] = dropdown_options
 at.session_state["missing_columns"] = {"DIGITAL": [], "TV": ["Brand", "Daypart", "Network_Name"]}
 at.session_state["log"] = []
+at.session_state["applied_indices"] = []
 at.session_state["queue"] = []
 at.session_state["queue_next_id"] = 1
 at.session_state["last_execution_results"] = None
@@ -50,7 +52,7 @@ for _ in range(5):
 t1 = time.perf_counter()
 print(f"5 reruns with unchanged data_version took {t1 - t0:.3f}s total (should be fast, cache hits)")
 
-from app import build_excel_bytes, build_log_csv_bytes
+from tools.rroi_backfill import build_excel_bytes, build_log_csv_bytes
 
 bytes_v0_a = build_excel_bytes(at.session_state["df"], at.session_state["data_version"], at.session_state["sheet_name"])
 bytes_v0_b = build_excel_bytes(at.session_state["df"], at.session_state["data_version"], at.session_state["sheet_name"])

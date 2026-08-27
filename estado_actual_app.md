@@ -609,3 +609,17 @@ Two details worth knowing:
 ### Testing
 
 `test_data_caveats.py` TEST B's assertion moved from `{"Jun"}` to `{pd.Timestamp("2026-06-01")}`, and a new **TEST J** covers the point directly: two rows for the same placement in Jun 2025 and Jun 2026 must stay **two distinct caveat lines**, and the cells written into the real bundled template must be genuine `datetime` values carrying format `mmm-yy` — asserting the type, the format string and both years, so a regression to a text month fails loudly.
+
+## 20. Data Caveats: day-level detection removed (2026-08-27)
+
+### The change
+
+The "Detection granularity" choice (`month` vs. `row`) is gone — the tool now generates caveats at **month-total grain only**, which was always the recommended, template-validated default. `classify()` dropped its `detection_mode` parameter entirely (`classify(grouped)`, not `classify(grouped, mode)`); the `row` branch that flagged an individual off-day even when the month total was complete no longer exists. `DETECTION_MODE_LABELS` and `DETECTION_MODE_HELP` were deleted along with the `st.radio` that exposed the choice in `render()`, and the "Detection granularity: ..." line in the generated summary `.txt`.
+
+### What stayed
+
+The day-level flags (`RowNullCost`/`RowNullImpr` per row, `DaysNullCost`/`DaysNullImpr`/`MaskedNullCost`/`MaskedNullImpr` per placement-month) are still computed in `build_groups()` — they now feed only the **`validate()` "masked" finding** (a WARNING: "Lines with individual days missing cost/impressions that the month total hides"). That finding is informational, not generative — it never adds a caveat row, it just tells the analyst a day-level gap exists inside an otherwise-complete month. Its wording was updated to stop referring to a "detection mode 'Month total'" that no longer exists as a choice.
+
+### Testing
+
+`test_data_caveats.py` TEST C was rewritten: it used to assert the masked-day case produced 0 caveats under `"month"` and 1 under `"row"`; it now asserts only the former, since `"row"` no longer exists, while confirming `DaysNullImpr`/`MaskedNullImpr` still compute correctly (proving the validation finding they feed is unaffected). Every other `classify()` call site in the test file (and in `render()`) dropped the now-removed second argument. Both the user guide (`DATA_CAVEATS_GUIDE.md`) and this file's own historical §15/§16 mentions of the two-mode UI were left as-is where they describe the tool's state *at the time they were written*; only genuinely live documentation (the guide's settings walkthrough, its "Important rules" list, and its quick recap) was updated to match the new behavior.

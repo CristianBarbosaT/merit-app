@@ -74,7 +74,7 @@ basic_rows = [
 ]
 df_b, *_ = read_delivery_file(make_upload_bytes(basic_rows), "b.xlsx")
 grouped_b = build_groups(df_b, filter_by_range=True, range_start=JUNE, range_end=JUNE)
-caveats_b = classify(grouped_b, "month")
+caveats_b = classify(grouped_b)
 
 by_placement = dict(zip(caveats_b["Placement"], caveats_b["Description"]))
 assert by_placement.get("PL1_UNE") == DESC_NULL_IMPRESSIONS
@@ -89,8 +89,10 @@ print("TEST B OK: 'Null impressions' / 'Null cost' detected correctly at month g
       "a complete placement is not flagged")
 
 # ---------------------------------------------------------------------------
-# TEST C: a day-level gap that the month total hides is NOT a caveat under
-# 'month' mode, but IS caught under 'row' mode
+# TEST C: a day-level gap that the month total hides is NOT a caveat -- detection
+# is month-total only, with no day-level mode to catch it instead. The day-level
+# flags survive (DaysNullImpr, MaskedNullImpr) since they still feed the "masked"
+# validation finding (an FYI, not a generated caveat) -- see TEST D.
 # ---------------------------------------------------------------------------
 masked_rows = [
     row("2026-06-01", placement="PL4_UNE", impressions=100, media_cost=5.0),
@@ -103,11 +105,9 @@ assert grouped_c["MonthNullImpr"].iloc[0] == False  # noqa: E712 -- month total 
 assert grouped_c["DaysNullImpr"].iloc[0] == 1
 assert grouped_c["MaskedNullImpr"].iloc[0] == True  # noqa: E712
 
-caveats_month = classify(grouped_c, "month")
-assert len(caveats_month) == 0, "the month total is complete, so 'month' mode must not flag it"
-caveats_row = classify(grouped_c, "row")
-assert len(caveats_row) == 1 and caveats_row["Description"].iloc[0] == DESC_NULL_IMPRESSIONS
-print("TEST C OK: a masked single-day gap is invisible in 'month' mode, caught in 'row' mode")
+caveats_month = classify(grouped_c)
+assert len(caveats_month) == 0, "the month total is complete, so it must not be flagged"
+print("TEST C OK: a masked single-day gap never becomes a caveat -- only the month total counts")
 
 # ---------------------------------------------------------------------------
 # TEST D: validate() — each finding in isolation
@@ -130,7 +130,7 @@ validate_rows = [
 ]
 df_d, *_ = read_delivery_file(make_upload_bytes(validate_rows), "d.xlsx")
 grouped_d = build_groups(df_d, filter_by_range=True, range_start=JUNE, range_end=JUNE)
-caveats_d = classify(grouped_d, "month")
+caveats_d = classify(grouped_d)
 brands_d = sorted(df_d["Brand"].unique())
 issues, detail = validate(df_d, grouped_d, caveats_d, brands_d, filter_by_range=True)
 
@@ -166,13 +166,13 @@ range_rows = [
 df_e, *_ = read_delivery_file(make_upload_bytes(range_rows), "e.xlsx")
 
 grouped_filtered = build_groups(df_e, filter_by_range=True, range_start=JUNE, range_end=JUNE)
-caveats_filtered = classify(grouped_filtered, "month")
+caveats_filtered = classify(grouped_filtered)
 assert set(caveats_filtered["Placement"]) == {"PL_JUN_UNE"}, (
     "filtering to June must exclude the May-only placement entirely"
 )
 
 grouped_unfiltered = build_groups(df_e, filter_by_range=False, range_start=JUNE, range_end=JUNE)
-caveats_unfiltered = classify(grouped_unfiltered, "month")
+caveats_unfiltered = classify(grouped_unfiltered)
 assert set(caveats_unfiltered["Placement"]) == {"PL_JUN_UNE", "PL_MAY_UNE"}, (
     "without filtering, both months' caveats must be present"
 )
@@ -296,7 +296,7 @@ df_multi, *_ = read_delivery_file(make_upload_bytes(multi_cat_rows), "multi.xlsx
 cats = sorted(df_multi.loc[df_multi["Brand"] == "Dove", "Category"].unique())
 assert cats == ["Hair Care", "Skin Care"], cats
 # each row keeps its own category through detection — nothing is rewritten
-caveats_multi = classify(build_groups(df_multi, False, JUNE, JUNE), "month")
+caveats_multi = classify(build_groups(df_multi, False, JUNE, JUNE))
 assert sorted(caveats_multi["Category"].unique()) == ["Hair Care", "Skin Care"], \
     "detection must preserve each row's own category"
 # and the joined label is what reaches the tab name, rather than just the first category
@@ -318,7 +318,7 @@ two_year_rows = [
 ]
 df_years, *_ = read_delivery_file(make_upload_bytes(two_year_rows), "years.xlsx")
 grouped_years = build_groups(df_years, False, pd.Period("2025-06", freq="M"), JUNE)
-caveats_years = classify(grouped_years, "month")
+caveats_years = classify(grouped_years)
 assert len(caveats_years) == 2, "the two years must stay two separate caveat lines"
 assert set(caveats_years["Month"]) == {pd.Timestamp("2025-06-01"), pd.Timestamp("2026-06-01")}, \
     set(caveats_years["Month"])

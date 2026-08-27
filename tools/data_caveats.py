@@ -75,18 +75,6 @@ MIN_COST = 0
 # Cosmetic only — renames a brand for the output file name / tab; never affects detection.
 BRAND_NAME_OVERRIDES = {"TRESemme": "Tresemme"}
 
-DETECTION_MODE_LABELS = {
-    "month": "Month total (recommended)",
-    "row": "Any single day (broader — also catches days a complete month total hides)",
-}
-DETECTION_MODE_HELP = (
-    "**Month total**: a line is a caveat if that placement's WHOLE MONTH total has cost "
-    "but no impressions (or the reverse). This is the mode validated against the template.\n\n"
-    "**Any single day**: also flags a line if ANY single day matches the pattern, even "
-    "though the month total is complete. Finds a lot more (especially in TV and Digital "
-    "Social), but includes lines whose monthly total is actually fine."
-)
-
 DEFAULT_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "data_caveats_template.xlsx")
 
 STATE_DEFAULTS = {
@@ -231,7 +219,8 @@ def read_delivery_file(file_bytes: bytes, filename: str, format_key: str = DEFAU
     out["GRPs"] = numeric("grps")
     out["VideoViews"] = numeric("video_views")
 
-    # Row-level (daily) flags — used by validation and by DETECTION_MODE == "row"
+    # Row-level (daily) flags — feed the "masked" validation finding (a day-level gap
+    # the month total otherwise covers); caveat detection itself is month-total only.
     out["RowNullCost"] = ((out["Impressions"] > MIN_IMPRESSIONS) &
                           (out["Cost"] <= MIN_COST)).astype(int)
     out["RowNullImpr"] = ((out["Cost"] > MIN_COST) &
@@ -282,19 +271,15 @@ def build_groups(df: pd.DataFrame, filter_by_range: bool, range_start: pd.Period
     return grouped.reset_index(drop=True)
 
 
-def classify(grouped: pd.DataFrame, detection_mode: str) -> pd.DataFrame:
-    """Assigns the caveat description according to detection_mode."""
+def classify(grouped: pd.DataFrame) -> pd.DataFrame:
+    """Assigns the caveat description: a line is a caveat only if that placement's WHOLE
+    MONTH total has cost but no impressions (or the reverse). This is the only detection
+    grain offered — day-level detection was removed so every caveat line reflects a
+    genuine month-total gap, not a single day the month total otherwise covers."""
     grouped = grouped.copy()
     grouped["Description"] = pd.NA
     grouped.loc[grouped["MonthNullImpr"], "Description"] = DESC_NULL_IMPRESSIONS
     grouped.loc[grouped["MonthNullCost"], "Description"] = DESC_NULL_COST
-
-    if detection_mode == "row":
-        pending = grouped["Description"].isna()
-        grouped.loc[pending & (grouped["DaysNullCost"] >= grouped["DaysNullImpr"]) &
-                    (grouped["DaysNullCost"] > 0), "Description"] = DESC_NULL_COST
-        grouped.loc[grouped["Description"].isna() & (grouped["DaysNullImpr"] > 0),
-                    "Description"] = DESC_NULL_IMPRESSIONS
 
     caveats = grouped[grouped["Description"].notna()].copy()
     caveats["Type"] = TYPE_VALUE
@@ -355,8 +340,8 @@ def validate(data: pd.DataFrame, grouped: pd.DataFrame, caveats: pd.DataFrame, b
             "Lines with individual days missing cost/impressions that the month total hides",
             len(masked),
             f"{days:,} individual days across {len(masked)} lines. Their month total DOES "
-            "have both cost and impressions, so they don't count as a caveat under "
-            "detection mode 'Month total'.", masked)
+            "have both cost and impressions, so they aren't generated as a caveat — this "
+            "tool only flags a whole month's total, not a single day within it.", masked)
 
     # 3) Lines at zero total but with activity (GRPs / Video Views)
     zero_active = grouped[grouped["ZeroButActive"]]
@@ -594,12 +579,6 @@ def render():
     range_start, range_end = label_to_period[start_label], label_to_period[end_label]
     rng_label = range_label(range_start, range_end)
 
-    detection_mode = st.radio(
-        "Detection granularity", list(DETECTION_MODE_LABELS),
-        format_func=lambda k: DETECTION_MODE_LABELS[k], key="caveats_detection_mode",
-    )
-    st.caption(DETECTION_MODE_HELP)
-
     inc_number = st.text_input(
         "INC# for the output tabs (leave blank to keep the 'INC#' placeholder)",
         key="caveats_inc_number",
@@ -630,7 +609,7 @@ def render():
         )
 
         grouped = build_groups(data, filter_by_range, range_start, range_end)
-        caveats = classify(grouped, detection_mode)
+        caveats = classify(grouped)
         all_brands = sorted(data["Brand"].unique())
 
         issues, detail = [], {}
@@ -694,8 +673,7 @@ def render():
 
         summary_lines = [
             f"Data Caveat Logs summary - {rng_label}",
-            f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-            f"Detection granularity: {detection_mode}", "",
+            f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", "",
         ]
         for row in summary_rows:
             summary_lines.append(

@@ -42,9 +42,6 @@ A table lists every file read — which tab it used, how many rows, which brand(
 ### 3. Set up the run
 
 - **Date range to report** — a slider showing every month found across your files. Drag both ends to cover the months you want in the log.
-- **Detection granularity**:
-  - **Month total (recommended)** — a row is a caveat if that placement's *whole month* has cost but no impressions (or the reverse). This is the setting validated against the template.
-  - **Any single day** — also flags a placement if *any single day* matches the pattern, even though its month total is complete. Finds a lot more, but includes lines that are actually fine overall.
 - **INC# for the output tabs** — the ticket number that goes into each output file's tab name. Leave it blank to keep a generic placeholder.
 - **Filter the data to the selected range** — on by default. Turn it off to report every month found instead of just the ones you picked above (the file name still reflects your selected range either way).
 - **Generate a file even if a brand has no caveats** — on by default. A brand with a completely clean delivery still gets a file (an empty, correctly-formatted log) so nothing is missing from the batch — it's flagged either way so you know to double-check it by hand.
@@ -105,7 +102,7 @@ If validation finds nothing at all, you'll see a plain confirmation that the dat
 
 ## Important rules & restrictions
 
-- **Detection always happens at placement + month**, never at the single-day level for the log itself — "Any single day" mode only changes *which* placement-months qualify, the output is still one row per placement-month either way.
+- **Detection always happens at placement + month, on the whole month's total.** A row becomes a caveat only if that placement's *entire month* has cost but no impressions (or the reverse) — a single off day within an otherwise-complete month never generates a line. If validation is on and it finds days like that, it tells you about them separately (see below); it just doesn't turn them into caveat rows.
 - **The Month column includes the year**, shown as `Jun-26`. It's written as a real date (which is what the template's own Month dropdown expects), so it sorts and filters correctly in Excel, and a log covering more than a year never leaves you guessing which `Jun` a row means.
 - **Channels without a Campaign or Placement column filled in** (commonly TV) can only be checked at Partner + Month — that's the finest grain the data actually supports there.
 - **A brand with zero caveats still gets a file by default** — an empty but correctly formatted log, so the batch is always complete. Turn off "Generate a file even if a brand has no caveats" if you'd rather skip those entirely.
@@ -131,7 +128,7 @@ If validation finds nothing at all, you'll see a plain confirmation that the dat
 
 1. Pick the delivery file format (RROI or LCA), then upload your delivery file(s) → **Read files**.
 2. Check the files-read table for anything unexpected.
-3. Set the date range, detection granularity, and INC#.
+3. Set the date range and INC#.
 4. **Generate Data Caveat Logs.**
 5. Review the validation findings and the summary table.
 6. Download the `.zip` — one log per brand, ready to send.

@@ -15,7 +15,7 @@
 ## 1. Project file structure
 
 ```
-backfill-media-cost-app/
+merit_V1/
 ├── app.py                          # M.E.R.I.T. shell: home menu + tool registry/mounting only
 ├── tools/
 │   ├── __init__.py

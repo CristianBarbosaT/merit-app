@@ -7,6 +7,8 @@
 > **Updated 2026-08-05** — major revision. Digital now splits into three sub-types (Social / Reserve / Programmatic) with their own filter sets, the single hardcoded weighting was replaced by six selectable operations, several filters accept multiple values, and the subset lock was rebuilt on row overlap. Sections 11–13 cover all of it; §3's weighting formula still describes the `MC_WEIGHTED` / `IMPR_WEIGHTED` operations, but is no longer the only path.
 >
 > **Updated 2026-08-05 (same day, second follow-up)** — the single-purpose app became **M.E.R.I.T APP** (Media Evaluation, Reconciliation & Integrity Tool), a shell with a home menu mounting multiple independent tools. The former app.py became `tools/rroi_backfill.py` unchanged in substance; a new **Data Caveats Generator** tool was added (ported from a standalone script). See §15.
+>
+> **Updated 2026-08-14** — third tool added: **TV Data Standardization**, which reconciles the TV team's spot-level files against the platform export and corrects it. Built from a written spec (`PROMPT - Logica Proceso TV Data.md`) plus the real workbook it describes. See §16.
 
 ---
 
@@ -19,7 +21,9 @@ backfill-media-cost-app/
 │   ├── __init__.py
 │   ├── rroi_backfill.py            # The entire backfill tool (formerly all of app.py) — see §2-14
 │   ├── data_caveats.py             # Data Caveats Generator — see §15
-│   └── data_caveats_template.xlsx  # Bundled default Data Caveat Log template (25 KB)
+│   ├── data_caveats_template.xlsx  # Bundled default Data Caveat Log template (25 KB)
+│   ├── tv_standardization.py       # TV Data Standardization — see §16
+│   └── tv_mappings.json            # Its lookup tables (estimate names, networks, dayparts, brands)
 ├── requirements.txt                # streamlit, pandas, openpyxl (no pinned versions)
 ├── .venv/                          # Local virtual environment (not versioned)
 ├── test_logic.py                   # RROI Backfill: taxonomy, operations, multi-value subsets, lock, build_preview
@@ -27,9 +31,11 @@ backfill-media-cost-app/
 ├── test_apptest_cache.py           # RROI Backfill: export-cache correctness/invalidation
 ├── test_real_file.py               # RROI Backfill: the real 150k-row workbook through taxonomy + every operation
 ├── test_data_caveats.py            # Data Caveats: pipeline functions + a real write against the bundled template
+├── test_tv_standardization.py      # TV: synthetic logic tests + the real-file §10 control-figure regression
 ├── test_apptest_home.py            # Home menu navigation + Data Caveats settings/generate/download, via AppTest
 ├── USER_GUIDE.md                   # Non-technical user manual — RROI Manual Backfill
 ├── DATA_CAVEATS_GUIDE.md           # Non-technical user manual — Data Caveats Generator
+├── TV_STANDARDIZATION_GUIDE.md     # Non-technical user manual — TV Data Standardization
 └── estado_actual_app.md            # This document
 ```
 
@@ -431,3 +437,175 @@ Detects **"Null impressions"** (cost present, impressions never, for a placement
 ### Documentation
 
 `USER_GUIDE.md` (RROI Manual Backfill) now opens with a pointer to the home menu and to the Data Caveats guide. A new `DATA_CAVEATS_GUIDE.md`, matching the same non-technical style, covers the second tool end to end — kept as a **separate file** rather than folded into `USER_GUIDE.md`, since the two tools have unrelated audiences/workflows and the code itself is already split the same way (one module per tool).
+
+---
+
+## 16. TV Data Standardization (2026-08-14)
+
+### What it does
+
+Normalizes the TV team's raw spot-level files: `AFFID DATE` converted to a real date, networks and dayparts mapped to consistent names, impressions scaled to real units. The user uploads one file per product and chooses how the standardized result comes back — separate files per product, one consolidated file, or both.
+
+Built from `PROMPT - Logica Proceso TV Data.md` plus the real `CONSOLIDATED TV DATA.xlsx` the spec describes. Everything below was verified against that workbook rather than taken on trust.
+
+### Scope correction, same day
+
+The spec describes a full 6-step process — normalize the TV files, then reconcile them against the reporting platform's export and propose corrections (phantom spend, missing impressions), ending in a 6-sheet workbook (`DATA`/`RECONCILIATION`/`TRACKER`/`CLEAN`/`VERIFICATION`/`LOG`). The tool was first built to that full spec, with the UI requiring **two** uploads (TV files + platform export).
+
+The user's actual intent was narrower: just the normalization step (spec §3), exposed as a simple upload → standardize → download tool, with the platform export out of scope for now ("Sin pedir el export de la plataforma... La reconciliación/corrección contra la plataforma queda fuera de esta herramienta por ahora"). They also wanted the output format (separate / consolidated / both) chosen by the user before generating, not always all three.
+
+`render()` was rewritten accordingly: single file uploader, no export/sheet selection, an output-format radio, one download. The reconciliation pipeline below (§ "Proposal rules" onward) is **fully implemented and tested but not wired into the UI** — `read_platform_export`, `build_reconciliation`, `propose_corrections`, `judgment_calls`, `apply_corrections`, `build_output_workbook` all remain in `tools/tv_standardization.py` as library functions, kept because they're real-data-verified and the user's own framing was "por ahora," not "never." A future phase could wire them back in behind, e.g., an "advanced" toggle.
+
+### The central transformation: AFFID DATE → real date
+
+`AFFID DATE` arrives as `MMMDD` text (`JUN28`) with **no year**. The platform files spots by the affidavit date (when the station certified the spot aired), not the planned `DATE`, so this conversion is what makes the two sides line up at all.
+
+`effective_date(affid, planned)`:
+- inherits the year from the planned `DATE`;
+- if the result lands more than ~45 days from the plan, nudges the year ±1 — an affidavit of `JAN02` against a `12/30/26` plan is 2027, not 2026. This doesn't occur in the current dataset (all Apr–Jun 2026) but is covered and tested;
+- falls back to the planned date when the affidavit is blank (**244 of 4,819 rows**, arriving as `' '` — a space, not an empty cell);
+- falls back rather than raising on anything unparseable (`JUN99`, garbage text).
+
+**Measured on the real files**, aggregating by (Product, Network, day): the affidavit date gives **1,042 exact spend matches of 1,080 keys (96.5%)** versus **39.9%** using the planned date. The spec claimed 1,042 of 1,091 (95.5%) — the numerator matches exactly; the denominator differs slightly because this implementation counts keys present on both sides (an inner join) rather than the union. The claim itself is confirmed, and the test asserts the 1,042.
+
+### Ingestion notes
+
+- **The header row is found by scanning column A for `ESTIMATE NAME`**, never hardcoded to row 33 — the report preamble's length isn't guaranteed. Tested with the header at a different offset.
+- **Columns are read by position, not name.** `NETWORK` appears twice (positions 3 and 9) so name-based lookup is ambiguous. The header is still checked, and a mismatch produces a *warning* rather than a failure, since position is the reliable signal.
+- **`ASSIGNED GROSS`/`ASSIGNED NET` vs `GROSS ASSIGNED`/`NET ASSIGNED`** — both spellings accepted (the VIC re-pull uses the flipped order).
+- **Product code comes from the filename's leading token**, since it isn't a column in the file.
+- **Impressions arrive in thousands** and are multiplied by 1,000.
+- **An unmapped network or estimate name raises**, naming the offending value. This is deliberate and matches the spec: passing the raw value through would make the row silently vanish from the join and unbalance the reconciliation.
+
+### Re-pull handling — a deliberate divergence from the workbook
+
+When two files cover the same product, `resolve_repulls` keeps the **more recent** pull (by the date token in the filename) and logs the discard. The consolidated workbook kept the *older* VIC file, leaving every VIC row with `ACTIMP = 0` even though the re-pull had real audience data; the spec calls that a slip. Verified: the newer VIC pull carries **4,334,900** actual impressions where the older had 0.
+
+The real-file regression deliberately reconstructs the workbook's own choice (older VIC) when checking §10's control figures, so the comparison is like-for-like, while the tool itself defaults to the newer pull.
+
+### Proposal rules, and where they stop (implemented, not yet wired into the UI)
+
+The spec lists `TRACKER` as an *output* ("acciones propuestas"), so the tool derives the corrections rather than asking for them. Both rules require the platform to be reporting **nothing** where TV is unambiguous — that is what makes them safe to automate:
+
+| Action | Rule | Key |
+|---|---|---|
+| **Zero out spend** | platform cost > 0, platform impressions = 0, **and** TV impressions = 0 | Product × Month × Network (no daypart) |
+| **Backfill impressions** | TV impressions > 0 **and** platform impressions = 0, with rows present in the export | Product × Month × Daypart × Network |
+
+**Measured against the analyst's actual corrections in the workbook:**
+
+- Zero-out proposes **exactly** the 12 groups that were zeroed — no false positives, no misses.
+- Backfill proposes **16 of the 20** that were filled, with **no false positives**.
+
+The 4 it doesn't propose are cases where **both** sides report impressions but disagree (830,000 vs 780,000; 414,450 vs 262,900; 36,000 vs 42,000; and the VIC group whose TV total was 0 only because of the older pull). No threshold separates these from ordinary measurement drift — at a >2% relative gap there are 28 such groups and the analyst corrected only 3 of them. **So the tool does not guess.** `judgment_calls()` surfaces them in a dedicated, sorted table, and an "add a correction manually" form (cascading dropdowns sourced from the reconciliation, so a correction can never target rows that don't exist) lets the analyst add what they decide is warranted.
+
+An earlier, looser draft of these rules proposed 137 corrections touching 2,235 rows against the analyst's 20/435 — worth recording as the reason the rules are deliberately conservative.
+
+### Spec §10 control figures — verified, with one correction to the spec
+
+Every ingestion figure reproduces exactly: **4,819 DATA rows** (DHC 567 / TRE 4,240 / VIC 12), month split **APR 1,555 / MAY 1,915 / JUN 1,349**, **244** blank affidavits, export **2,475 rows** spanning 2026-04-06 to 2026-06-30, and only `Media_Cost`/`Impressions` ever modified.
+
+**Two of the spec's correction figures are wrong**, and the tests assert the measured values instead:
+
+- §10 claims zero-out changed **85 rows in 13 groups**. The workbook's own `7.16 CLEAN` shows **82 rows in 12 groups**. The difference is `TRE / Jun / ASPIRE`: §6.1 lists it among the applied entries, but its 3 rows were **already at $0**, so zeroing them changed nothing. The spec counts a no-op as a modification. (It already uses a "no-op (ya estaba en 0)" label for BEIN SPORTS SPANISH and CBS TV NETWORK — ASPIRE belongs in that bucket too.)
+- §6.2's table lists **20 backfill groups**, but the tracker sheet only contains 19 with a computed row count. The 20th — `VIC / Jun / Women Cable / BLACK ENTERTAINMENT` — was applied directly to `7.16 CLEAN` with no tracker entry at all. The impressions figure of **435 rows / 20 groups** is correct; the tracker just doesn't account for one of them.
+
+Also confirmed from the workbook: `VIC / Jun / BLACK ENTERTAINMENT`'s **zero-out was never applied** — it's still carrying $666,065.10, exactly as §6.1 flags. Under this tool's rules it isn't proposed either (the platform reports 4,334,600 impressions there, so it isn't phantom spend), which happens to agree with what the analyst actually did rather than with what the tracker said.
+
+### Configuration
+
+`tools/tv_mappings.json` holds `estimate_names` (raw → clean + daypart), `networks` (57 entries, raw → platform `Network_Name`), `daypart_to_platform` (bridging `WOMEN'S CABLE` → `Women Cable`), and `product_brands`. JSON rather than YAML to avoid adding a dependency; the spec asked for external config, not a specific format. Extracted programmatically from the workbook's `MAPPING` sheet, so it matches byte-for-byte.
+
+### Testing
+
+`test_tv_standardization.py` runs in two parts, unchanged by the scope correction since it tests functions, not `render()`. Part 1 (12 checks, always runs) covers the pure logic on synthetic data: the date conversion including both year-boundary directions and every fallback, re-pull resolution, `'NULL'` coercion, impression precedence, reconciliation deltas being *undefined* rather than `#DIV/0!`, corrections touching only the two metric columns, the no-matching-rows and already-zero reports, an unmapped network raising, a shifted header row, and the flipped `NET ASSIGNED` spelling. Part 2 is the real-file regression described above; it skips cleanly when the TV files aren't present.
+
+`test_apptest_home.py` TEST 5 exercises the new `render()` end to end through real Streamlit widgets: seeds `tv_data` the way "Standardize" would have left it (using the real `read_tv_file` on a file shaped like a real TV pull, not a hand-built stand-in), asserts the platform-export uploader is gone, checks the output-format radio's three options, clicks **Generate**, and confirms a non-empty file lands in `tv_output` with a real download button.
+
+### Not carried over
+
+The spec's `RUN_VALIDATION` / `STOP_ON_VALIDATION_ISSUES` / `WRITE_*` toggles have no analogue: in the library-level reconciliation code the reconciliation table *is* the validation and `build_output_workbook` always assembles all six sheets in one call, but neither is reachable from the UI right now (see "Scope correction" above). `AFFID TIME` is parsed and preserved in `DATA` but unused, exactly as in the manual process.
+
+## 17. Data Caveats: a second source schema, LCA (2026-08-26)
+
+### The bug
+
+`read_delivery_file` was hardcoded to one column schema (the RROI raw-file schema `COLS`). Files from `C:\Users\Cristian.Barbosa\Downloads\OneDrive_1_8-26-2026` — a different delivery pull the user called "LCA" — failed with "No sheet has all the expected columns", because `pick_sheet` requires every `REQUIRED_COLS` entry, and `Media_Cost` (the required cost column) doesn't exist in these files at all: it's spelled `Media Cost`, with a space.
+
+### What LCA actually is
+
+Verified against all 6 real files in that folder (DMC, Dove, Nexxus, Shea, Tresemme, Vaseline — one sheet each, header identical across all 6): same underlying fields as RROI, plus 9 extra columns the caveat detection has no use for (`Partnership`, `Campaign`, `Product_Line`, `Subcategory`, `Format`, `Audience`, `Daypart`, `Breakout`, `Clicks`), and exactly two column names differing by a space instead of an underscore: `Media Cost` (→ `Media_Cost`) and `Video Views` (→ `Video_Views`). Every other required column (`Channel`, `Date`, `Brand`, `Category`, `Prisma_Campaign_Secondary`, `Raw_Partner`, `Package_Placement_Name`, `Impressions`) matches RROI exactly.
+
+### The fix
+
+`COLS` (the RROI→canonical-field mapping) was split into `COLS_RROI` and `COLS_LCA = {**COLS_RROI, "cost": "Media Cost", "video_views": "Video Views"}`, registered in `FORMAT_PROFILES = {"RROI": {...}, "LCA": {...}}`. `pick_sheet` and `read_delivery_file` now take the column map as a parameter instead of reading the old module-level `COLS`/`REQUIRED_COLS` globals; `required_cols(cols_map)` replaces the old fixed `REQUIRED_COLS` set. `render()` gained a "Delivery file format" radio (RROI / LCA) shown above the uploader, applied to every file in that "Read files" click — the file-summaries table now also shows which format was used per file.
+
+One format applies per batch. If a user has both RROI and LCA files to process together, the workflow is: read + generate the first batch, **Start over**, switch the selector, read + generate the second — there's no per-file format override, since every real file seen from either source is internally consistent.
+
+### Testing
+
+`test_data_caveats.py` TEST H builds a synthetic LCA-shaped file (all 21 columns, spaced `Media Cost` / `Video Views`) and checks: `read_delivery_file(..., format_key="LCA")` correctly maps `Media Cost` → `Cost`; the same bytes under `format_key="RROI"` raise `ValueError` naming the missing `Media_Cost` column (proving the two schemas are genuinely distinct, not silently permissive). Also spot-checked directly against the real `DMC Hair Care LCA Data_'23-Q1'26.xlsx` (9,420 rows, 0 dropped, 2 caveat lines found) — not part of the automated suite since the file isn't in the repo, but confirms the fix against real data end to end.
+
+## 18. Merit Inspect + Merit Deliver integrated from merit_V1 (2026-08-27)
+
+### What was integrated
+
+Two tools built by a teammate in a parallel repo (`C:\Users\Cristian.Barbosa\Documents\merit_V1\merit_app`) were brought into this app, along with his home-menu layout:
+
+- **Merit Inspect** (`tools/merit_inspect.py`, 1,660 lines) — monthly QA pass: a rules engine (~17 rules: negative cost, placeholder placements, audience-code mismatches, Twitter/X partner, Knorr Product_Line and Breakout rules, TV audience, channel/type conflicts…), a spend-vs-delivery analysis per unit, a channel/month summary, an offline-presence view, a reconciliation table and a brand/category/channel coverage checklist, all written into one formatted Excel report.
+- **Merit Deliver** (`tools/merit_deliver.py`, 583 lines) — builds the 18-column client-facing deliverable, reconciles its totals against the source on Channel × Product_Line, scans for live formulas, classifies visual duplicates (`TRUE DUP` / `REVIEW` / `EXPECTED` by whether the differentiating columns are benign), and ships deliverable + backup + QA as one zip.
+- **`tools/config/audience_codes.csv`** (586 codes) — Merit Inspect's audience catalog, resolved relative to the module (`os.path.dirname(__file__)/config/`), with an in-app uploader override. Verified it loads from the new location after the copy.
+
+Both modules were copied **unchanged**: they already followed this project's conventions (`init_state()`/`reset_all()`, a `← Back to menu` button at the top of `render()`, and their own `inspect_`/`deliver_`-prefixed session-state keys), so nothing needed adapting to avoid collisions.
+
+### The home menu (his layout, adopted wholesale)
+
+`app.py` now uses his version: five numbered, icon-prefixed cards laid out `CARDS_PER_ROW = 3` (so 3 + 2), a CSS block that hides Streamlit's header anchor icons and forces equal-height cards (`min-height: 260px`, flex with the button anchored at the bottom regardless of description length), and the title spelled **`M.E.R.I.T. APP`** — with the trailing period, which is also now the `page_title`. Order: 1 Merit Inspect, 2 TV Data Standardization, 3 RROI Manual Backfill, 4 Merit Deliver, 5 Data Caveats Generator.
+
+The `TOOLS` registry gained an `"icon"` key per tool. Adding a tool is still just one entry.
+
+### Divergences resolved during the merge
+
+His repo was forked from this one before the last two changes here, so his copies of the shared modules were older. **This repo's versions were kept** for everything shared (`rroi_backfill.py`, `tv_standardization.py`, `tv_mappings.json` were byte-identical anyway; `data_caveats.py` was not):
+
+- Kept here, absent from his: the **LCA source-schema selector** (§17) and the **multi-category handling** (a brand spanning Hair Care + Skin Care keeps both rather than being standardized to the first).
+- **Present in his, adopted in §19 below:** the `Month` column as a real date rather than a `"Jun"` string. Initially held back over a suspected conflict with the template's dropdown; that turned out to be backwards (see §19).
+
+### Testing
+
+`test_apptest_home.py` was updated for the new home (5 `Open` buttons, asserted **in order** by key, and the `M.E.R.I.T. APP` spelling with its period) and gained **TEST 6**, which mounts Merit Inspect and Merit Deliver, asserting each renders without exception, shows its title, exposes its own keyed back button and file uploader, and starts with its own `<tool>_results` state key at `None` — i.e. that the two namespaces don't collide.
+
+Both tools were also exercised end to end outside the UI against synthetic data matching their real schemas: Merit Deliver builds an 18-column deliverable preserving every row, reconciles clean, classifies a planted benign-differentiated duplicate as `EXPECTED`, and writes real QA/deliverable bytes; Merit Inspect fires the expected rules on planted violations (negative cost, placeholder placement) alongside the Knorr and TV rules, and writes a complete Excel report.
+
+### Data loss noted the same day
+
+Six `test_*.py` files, the untracked `test_tv_standardization.py`, and the whole `C:\Users\Cristian.Barbosa\Documents\TV Files` folder disappeared from disk between the previous session and this one (cause unknown — the source modules were untouched). The six tracked test files were restored from `HEAD` via `git show HEAD:<file> > <file>`, then this session's lost additions were rewritten: TEST H (LCA) and a new TEST I (multi-category) in `test_data_caveats.py`, and TEST 5 (the TV normalize→generate→download flow) in `test_apptest_home.py`.
+
+**`test_tv_standardization.py` was recovered by the user from the Recycle Bin** the next day (403 lines, unmodified). Re-verified: all 12 synthetic checks pass, and the real-file regression skips itself cleanly as designed, since `C:\Users\Cristian.Barbosa\Documents\TV Files` is still missing. That regression stays dormant until those files are restored — the skip is by design, not a silent pass.
+
+Everything of value is back. The lesson stands: `test_tv_standardization.py`, `tv_standardization.py`, `tv_mappings.json` and `TV_STANDARDIZATION_GUIDE.md` are all still **untracked** — committing them is what makes the next accident recoverable from git rather than from the Recycle Bin.
+
+## 19. Data Caveats: the Month column carries its year (2026-08-27)
+
+### The change
+
+`classify()` now writes `Month` as a **real date** — the month's first day, via `caveats["Period"].dt.to_timestamp()` — instead of a 3-letter abbreviation (`.dt.strftime("%b")`). `write_brand_file_bytes` gives that cell the number format `MONTH_CELL_FORMAT = "mmm-yy"`, so the log still *reads* as `Jun-26`. Originally a teammate's change in the `merit_V1` fork (§18), adopted here after verifying it against the template.
+
+### Why the earlier hesitation was wrong
+
+The change was initially held back on the theory that column I's data-validation dropdown listed month **names**, and that writing a date would trip it. Inspecting the template settled it the other way: the dropdown's source range `$Y$3:$Y$13` contains **`datetime` values**, not strings.
+
+So the template was always designed to hold dates in that column — the `"Jun"` string was the mismatch, and this change removes it rather than introducing one.
+
+### Why it matters beyond tidiness
+
+A bare `"Jun"` cannot distinguish `Jun'25` from `Jun'26`. That is not hypothetical for the current inputs: the real LCA files span **Aug 2023 → Mar 2026**, so any log covering more than twelve months had genuinely ambiguous rows. Confirmed end to end on the real `DMC Hair Care LCA Data_'23-Q1'26.xlsx`: both caveat lines now write `datetime(2026, 3, 1)` with format `mmm-yy`.
+
+Two details worth knowing:
+
+- The dropdown's source only enumerates 2025 months (and skips June — `Y8` jumps from May to July). A 2026 date therefore isn't among the listed options. This is harmless here: list validation only fires on *manual* entry in Excel, not on values written programmatically by openpyxl, and `allowBlank` is true. Worth mentioning to whoever maintains the template, since the same gap affects anyone picking from the dropdown by hand.
+- `_detail()` (the validation report) keeps its own `out["Period"].astype(str)` rendering and is unaffected.
+
+### Testing
+
+`test_data_caveats.py` TEST B's assertion moved from `{"Jun"}` to `{pd.Timestamp("2026-06-01")}`, and a new **TEST J** covers the point directly: two rows for the same placement in Jun 2025 and Jun 2026 must stay **two distinct caveat lines**, and the cells written into the real bundled template must be genuine `datetime` values carrying format `mmm-yy` — asserting the type, the format string and both years, so a regression to a text month fails loudly.

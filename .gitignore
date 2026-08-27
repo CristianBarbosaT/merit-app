@@ -11,3 +11,6 @@ __pycache__/
 # OS/editor cruft
 .DS_Store
 Thumbs.db
+
+# Streamlit runtime log
+streamlit.log

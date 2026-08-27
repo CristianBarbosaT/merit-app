@@ -1,6 +1,7 @@
-"""Data Caveats Generator — reads RROI delivery files, detects "Null impressions" /
-"Null cost" caveats at placement-month granularity, and writes one Data Caveat Log per
-brand from the corporate template (keeps its formatting, table and dropdowns).
+"""Data Caveats Generator — reads delivery files (RROI or LCA source schema, user-picked
+— see FORMAT_PROFILES), detects "Null impressions" / "Null cost" caveats at
+placement-month granularity, and writes one Data Caveat Log per brand from the corporate
+template (keeps its formatting, table and dropdowns).
 
 Ported from the standalone script `generar_data_caveats.py` (folder-based, run by hand)
 into an in-app, upload/download flow — see estado_actual_app.md for the full port notes.
@@ -33,9 +34,11 @@ DETAIL_COLUMNS = ["Brand", "Category", "Channel", "Campaign", "Site", "Placement
                   "Month", "Days", "DaysNullCost", "DaysNullImpr",
                   "Impressions", "Cost", "GRPs", "VideoViews"]
 
-# Maps a canonical field name to the column expected in each uploaded delivery file —
-# the same RROI raw-file schema the backfill tool already works with.
-COLS = {
+# Maps a canonical field name to the column expected in each uploaded delivery file.
+# Two source schemas are supported: RROI (the raw-file schema the backfill tool already
+# works with) and LCA (the same fields, plus extra columns the caveat detection doesn't
+# need, and two columns spelled with a space instead of an underscore).
+COLS_RROI = {
     "channel": "Channel", "date": "Date", "brand": "Brand", "category": "Category",
     "campaign": "Prisma_Campaign_Secondary", "site": "Raw_Partner",
     "placement": "Package_Placement_Name", "retailer": "Retailer",
@@ -43,8 +46,22 @@ COLS = {
     # Optional: only used for validation checks; ignored if absent.
     "grps": "GRPs", "video_views": "Video_Views",
 }
+COLS_LCA = {**COLS_RROI, "cost": "Media Cost", "video_views": "Video Views"}
 OPTIONAL_COLS = ("retailer", "grps", "video_views")
-REQUIRED_COLS = {COLS[k] for k in COLS if k not in OPTIONAL_COLS}
+
+FORMAT_PROFILES = {
+    "RROI": {"label": "RROI", "cols": COLS_RROI},
+    "LCA": {"label": "LCA", "cols": COLS_LCA},
+}
+DEFAULT_FORMAT = "RROI"
+
+
+def required_cols(cols_map: dict) -> set:
+    return {cols_map[k] for k in cols_map if k not in OPTIONAL_COLS}
+
+# The Month column is written as a real date and displayed in this Excel format, so the
+# log shows "Jun-26" rather than a bare "Jun" that loses the year.
+MONTH_CELL_FORMAT = "mmm-yy"
 
 TYPE_VALUE = "Null value check"
 STATUS_VALUE = "Leave as is - data is correct"
@@ -154,54 +171,57 @@ def build_sheet_name(inc: str, category: str, brand: str) -> str:
 # ----------------------------------------------------------------------------
 # Reading uploaded delivery files
 # ----------------------------------------------------------------------------
-def pick_sheet(file_bytes: bytes) -> tuple:
+def pick_sheet(file_bytes: bytes, cols_map: dict) -> tuple:
     """Picks the data sheet: the last one (right-most tab) whose header contains every
     required column. Real delivery files consistently put the working data on the last
     tab (a blank/staging "Sheet1" often comes first), so this covers them without extra
     configuration."""
+    required = required_cols(cols_map)
     wb = openpyxl.load_workbook(BytesIO(file_bytes), read_only=True)
     try:
         candidates = []
         for ws in wb.worksheets:
             header_row = next(ws.iter_rows(min_row=1, max_row=1), [])
             header = {c.value for c in header_row if c.value is not None}
-            if REQUIRED_COLS <= header:
+            if required <= header:
                 candidates.append(ws.title)
     finally:
         wb.close()
 
     if not candidates:
         raise ValueError(
-            f"No sheet has all the expected columns ({', '.join(sorted(REQUIRED_COLS))})."
+            f"No sheet has all the expected columns ({', '.join(sorted(required))})."
         )
     return candidates[-1], candidates
 
 
-def read_delivery_file(file_bytes: bytes, filename: str):
-    """Reads one uploaded delivery file. Returns (row-level DataFrame, sheet used,
-    candidate sheets, rows dropped for having no valid date)."""
-    sheet, candidates = pick_sheet(file_bytes)
+def read_delivery_file(file_bytes: bytes, filename: str, format_key: str = DEFAULT_FORMAT):
+    """Reads one uploaded delivery file in the given source format (RROI or LCA — see
+    FORMAT_PROFILES). Returns (row-level DataFrame, sheet used, candidate sheets, rows
+    dropped for having no valid date)."""
+    cols = FORMAT_PROFILES[format_key]["cols"]
+    sheet, candidates = pick_sheet(file_bytes, cols)
     df = pd.read_excel(BytesIO(file_bytes), sheet_name=sheet, engine="openpyxl")
 
-    missing = [COLS[k] for k in COLS if k not in OPTIONAL_COLS and COLS[k] not in df.columns]
+    missing = [cols[k] for k in cols if k not in OPTIONAL_COLS and cols[k] not in df.columns]
     if missing:
         raise ValueError(f"Missing columns in sheet '{sheet}': {missing}")
 
     out = pd.DataFrame()
-    out["Brand"] = clean_text(df[COLS["brand"]])
-    out["Category"] = clean_text(df[COLS["category"]])
-    out["Channel"] = clean_text(df[COLS["channel"]])
-    out["Campaign"] = clean_text(df[COLS["campaign"]])
-    out["Site"] = clean_text(df[COLS["site"]])
-    out["Placement"] = clean_text(df[COLS["placement"]])
-    out["Retailer"] = (clean_text(df[COLS["retailer"]]) if COLS["retailer"] in df.columns
+    out["Brand"] = clean_text(df[cols["brand"]])
+    out["Category"] = clean_text(df[cols["category"]])
+    out["Channel"] = clean_text(df[cols["channel"]])
+    out["Campaign"] = clean_text(df[cols["campaign"]])
+    out["Site"] = clean_text(df[cols["site"]])
+    out["Placement"] = clean_text(df[cols["placement"]])
+    out["Retailer"] = (clean_text(df[cols["retailer"]]) if cols["retailer"] in df.columns
                        else BLANK_PLACEHOLDER)
 
-    dates = pd.to_datetime(df[COLS["date"]], errors="coerce")
+    dates = pd.to_datetime(df[cols["date"]], errors="coerce")
     out["Period"] = dates.dt.to_period("M")
 
     def numeric(key):
-        col = COLS.get(key)
+        col = cols.get(key)
         if col and col in df.columns:
             return pd.to_numeric(df[col], errors="coerce").fillna(0)
         return pd.Series(0.0, index=df.index)
@@ -224,8 +244,8 @@ def read_delivery_file(file_bytes: bytes, filename: str):
 
 
 @st.cache_data(show_spinner=False)
-def _read_delivery_file_cached(file_bytes: bytes, filename: str):
-    return read_delivery_file(file_bytes, filename)
+def _read_delivery_file_cached(file_bytes: bytes, filename: str, format_key: str = DEFAULT_FORMAT):
+    return read_delivery_file(file_bytes, filename, format_key)
 
 
 # ----------------------------------------------------------------------------
@@ -279,7 +299,11 @@ def classify(grouped: pd.DataFrame, detection_mode: str) -> pd.DataFrame:
     caveats = grouped[grouped["Description"].notna()].copy()
     caveats["Type"] = TYPE_VALUE
     caveats["Status"] = STATUS_VALUE
-    caveats["Month"] = caveats["Period"].dt.strftime("%b")
+    # A real date (the month's first day), not a "Jun" string: the template's own Month
+    # dropdown (column I, source $Y$3:$Y$13) holds datetimes, and an abbreviation alone
+    # loses the year — two Junes from different years were indistinguishable in the log.
+    # write_brand_file_bytes formats the cell as "mmm-yy" so it still reads as "Jun-26".
+    caveats["Month"] = caveats["Period"].dt.to_timestamp()
     caveats["Retailer"] = caveats["Retailer"].map(
         lambda v: "" if str(v).strip().lower() in RETAILER_IGNORE else v)
 
@@ -425,6 +449,8 @@ def write_brand_file_bytes(caveats: pd.DataFrame, brand: str, category: str,
             cell = ws.cell(row=r, column=c)
             cell.value = value
             cell._style = copy(row_styles[c - 1])
+            if c == 9:  # Month: a real date, displayed as "Jun-26"
+                cell.number_format = MONTH_CELL_FORMAT
 
     n_rows = len(caveats)
     last_data_row = first_data_row + max(n_rows, 1) - 1  # the table needs >= 1 row
@@ -470,6 +496,13 @@ def render():
         "brand ready to send — built from the corporate template, formatting and all."
     )
 
+    format_key = st.radio(
+        "Delivery file format",
+        list(FORMAT_PROFILES),
+        format_func=lambda k: FORMAT_PROFILES[k]["label"],
+        horizontal=True, key="caveats_format",
+    )
+
     uploaded_files = st.file_uploader(
         "Upload delivery files (.xlsx) — one or more, one per brand or combined",
         type=["xlsx"], accept_multiple_files=True, key="caveats_uploader",
@@ -490,14 +523,16 @@ def render():
         for uploaded in uploaded_files:
             file_bytes = uploaded.getvalue()
             try:
-                df, sheet, candidates, dropped = _read_delivery_file_cached(file_bytes, uploaded.name)
+                df, sheet, candidates, dropped = _read_delivery_file_cached(
+                    file_bytes, uploaded.name, format_key
+                )
             except Exception as exc:
                 errors.append(f"{uploaded.name}: {exc}")
                 continue
 
             brands = sorted(df["Brand"].unique())
             summaries.append({
-                "File": uploaded.name, "Sheet": sheet, "Rows": len(df),
+                "File": uploaded.name, "Format": format_key, "Sheet": sheet, "Rows": len(df),
                 "Brand(s)": ", ".join(brands),
             })
             if len(candidates) > 1:
@@ -612,11 +647,14 @@ def render():
         for brand in all_brands:
             brand_rows = caveats[caveats["Brand"] == brand].copy()
             categories = sorted(data.loc[data["Brand"] == brand, "Category"].unique())
-            category = categories[0] if categories else ""
             if len(categories) > 1:
+                category = " & ".join(categories)
                 file_warnings.append(
-                    f"{brand}: has several categories {categories} -> used '{category}'"
+                    f"{brand}: has several categories {categories} -- kept as-is, each row "
+                    "keeps its own category; not standardized to a single one"
                 )
+            else:
+                category = categories[0] if categories else ""
 
             n_imp = int((brand_rows["Description"] == DESC_NULL_IMPRESSIONS).sum())
             n_cost = int((brand_rows["Description"] == DESC_NULL_COST).sum())

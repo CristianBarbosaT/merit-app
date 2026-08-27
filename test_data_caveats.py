@@ -9,9 +9,9 @@ import pandas as pd
 
 from tools.data_caveats import (
     DEFAULT_TEMPLATE_PATH, DESC_NULL_COST, DESC_NULL_IMPRESSIONS, BLANK_PLACEHOLDER,
-    STATUS_VALUE, TYPE_VALUE, build_groups, classify, display_brand, month_label,
-    period_label, range_label, read_delivery_file, validate, write_brand_file_bytes,
-    build_sheet_name, safe_filename,
+    MONTH_CELL_FORMAT, STATUS_VALUE, TYPE_VALUE, build_groups, classify, display_brand,
+    month_label, period_label, range_label, read_delivery_file, validate,
+    write_brand_file_bytes, build_sheet_name, safe_filename,
 )
 
 SOURCE_COLUMNS = ["Channel", "Date", "Brand", "Category", "Prisma_Campaign_Secondary",
@@ -82,7 +82,9 @@ assert by_placement.get("PL2_UNE") == DESC_NULL_COST
 assert "PL3_UNE" not in by_placement, "a placement with both metrics present is not a caveat"
 assert (caveats_b["Type"] == TYPE_VALUE).all()
 assert (caveats_b["Status"] == STATUS_VALUE).all()
-assert set(caveats_b["Month"]) == {"Jun"}
+# Month is a real date (the month's first day), so the year survives — a bare "Jun"
+# could not tell Jun'25 from Jun'26 in a log spanning more than one year
+assert set(caveats_b["Month"]) == {pd.Timestamp("2026-06-01")}, set(caveats_b["Month"])
 print("TEST B OK: 'Null impressions' / 'Null cost' detected correctly at month grain, "
       "a complete placement is not flagged")
 
@@ -230,5 +232,109 @@ assert safe_filename('Bad:Name/With*Chars?') == "Bad-Name-With-Chars-"
 long_name = build_sheet_name("INC1234567", "Hair Care", "A Very Long Brand Name Indeed")
 assert len(long_name) <= 31
 print("TEST G OK: label/filename/sheet-name helpers behave as expected")
+
+# ---------------------------------------------------------------------------
+# TEST H: the LCA source format — extra columns, and Media Cost / Video Views
+# spelled with a space instead of an underscore
+# ---------------------------------------------------------------------------
+LCA_COLUMNS = ["Channel", "Partnership", "Date", "Brand", "Campaign",
+               "Prisma_Campaign_Secondary", "Product_Line", "Category", "Subcategory",
+               "Format", "Raw_Partner", "Audience", "Package_Placement_Name", "Daypart",
+               "Retailer", "Breakout", "Impressions", "Clicks", "Media Cost",
+               "Video Views", "GRPs"]
+
+
+def lca_row(date, brand="BrandA", category="Hair Care", channel="Digital Video",
+            campaign="CampX", site="YOUTUBE.COM", placement="PL1_UUT", retailer="(all)",
+            impressions=None, media_cost=None, grps=None, video_views=None):
+    return {
+        "Channel": channel, "Partnership": None, "Date": date, "Brand": brand,
+        "Campaign": "Some Campaign (LCA)", "Prisma_Campaign_Secondary": campaign,
+        "Product_Line": "Hair Care All Other_(all)", "Category": category,
+        "Subcategory": "Hair Care All Other", "Format": "(all)", "Raw_Partner": site,
+        "Audience": "Custom: Competitive Purchasers", "Package_Placement_Name": placement,
+        "Daypart": "NULL", "Retailer": retailer, "Breakout": "NULL",
+        "Impressions": impressions, "Clicks": "NULL", "Media Cost": media_cost,
+        "Video Views": video_views, "GRPs": grps,
+    }
+
+
+lca_rows = [
+    lca_row("2026-06-01", placement="PL1_UUT", impressions=None, media_cost=5.0),
+    lca_row("2026-06-02", placement="PL1_UUT", impressions=None, media_cost=7.0),
+]
+lca_buf = BytesIO()
+pd.DataFrame(lca_rows, columns=LCA_COLUMNS).to_excel(lca_buf, index=False)
+
+df_lca, sheet_lca, _, dropped_lca = read_delivery_file(
+    lca_buf.getvalue(), "lca_test.xlsx", format_key="LCA"
+)
+assert dropped_lca == 0
+assert len(df_lca) == 2
+assert df_lca["Cost"].tolist() == [5.0, 7.0], "Media Cost (space) must map to Cost under LCA"
+assert df_lca["Impressions"].tolist() == [0.0, 0.0]
+
+try:
+    read_delivery_file(lca_buf.getvalue(), "lca_test.xlsx", format_key="RROI")
+    raise AssertionError("an LCA file under the RROI format must fail (Media_Cost is missing)")
+except ValueError as exc:
+    assert "Media_Cost" in str(exc)
+print("TEST H OK: the LCA format reads Media Cost / Video Views by their spaced names, "
+      "and is rejected under RROI (Media_Cost missing)")
+
+# ---------------------------------------------------------------------------
+# TEST I: a brand spanning several categories keeps them all — the category is
+# never silently standardized down to the first one
+# ---------------------------------------------------------------------------
+multi_cat_rows = [
+    row("2026-06-01", brand="Dove", category="Hair Care", placement="PL1_UNE",
+        impressions=None, media_cost=5.0),
+    row("2026-06-01", brand="Dove", category="Skin Care", placement="PL2_UNE",
+        impressions=100, media_cost=None),
+]
+df_multi, *_ = read_delivery_file(make_upload_bytes(multi_cat_rows), "multi.xlsx")
+cats = sorted(df_multi.loc[df_multi["Brand"] == "Dove", "Category"].unique())
+assert cats == ["Hair Care", "Skin Care"], cats
+# each row keeps its own category through detection — nothing is rewritten
+caveats_multi = classify(build_groups(df_multi, False, JUNE, JUNE), "month")
+assert sorted(caveats_multi["Category"].unique()) == ["Hair Care", "Skin Care"], \
+    "detection must preserve each row's own category"
+# and the joined label is what reaches the tab name, rather than just the first category
+tab_multi = build_sheet_name("INC1", " & ".join(cats), "Dove")
+assert "HairCare" in tab_multi and "SkinCare" in tab_multi, tab_multi
+assert len(tab_multi) <= 31
+print("TEST I OK: a multi-category brand keeps every category; the tab name names them all")
+
+# ---------------------------------------------------------------------------
+# TEST J: the Month column carries the year — written as a real date, formatted
+# "mmm-yy", and two same-month/different-year lines stay distinct
+# ---------------------------------------------------------------------------
+from datetime import datetime as _dt  # noqa: E402
+
+two_year_rows = [
+    # Jun 2025 and Jun 2026, same placement: a bare "Jun" would collapse them
+    row("2025-06-01", placement="PLY_UNE", impressions=None, media_cost=5.0),
+    row("2026-06-01", placement="PLY_UNE", impressions=None, media_cost=9.0),
+]
+df_years, *_ = read_delivery_file(make_upload_bytes(two_year_rows), "years.xlsx")
+grouped_years = build_groups(df_years, False, pd.Period("2025-06", freq="M"), JUNE)
+caveats_years = classify(grouped_years, "month")
+assert len(caveats_years) == 2, "the two years must stay two separate caveat lines"
+assert set(caveats_years["Month"]) == {pd.Timestamp("2025-06-01"), pd.Timestamp("2026-06-01")}, \
+    set(caveats_years["Month"])
+
+# and the written cell is a real date with the "mmm-yy" number format, not text
+years_bytes, _ = write_brand_file_bytes(
+    caveats_years, "BrandA", "Hair Care", template_bytes, "INC1234567"
+)
+ws_years = openpyxl.load_workbook(BytesIO(years_bytes)).worksheets[0]
+written_months = [ws_years.cell(row=r, column=9) for r in (8, 9)]
+assert all(isinstance(c.value, _dt) for c in written_months), \
+    [(c.value, type(c.value).__name__) for c in written_months]
+assert all(c.number_format == MONTH_CELL_FORMAT for c in written_months), \
+    [c.number_format for c in written_months]
+assert {c.value.year for c in written_months} == {2025, 2026}
+print("TEST J OK: Month is written as a real date formatted 'mmm-yy', keeping the year "
+      "so Jun'25 and Jun'26 remain distinct lines")
 
 print("ALL DATA CAVEATS TESTS PASSED")

@@ -1,0 +1,587 @@
+﻿Code,Audience
+0005,Demo: Women 13-24
+0007,Demo: Men 13-24
+0013,Demo: Women 13-34
+0017,Demo: Men 13-17
+0018,Demo: Men 18-24
+0019,Demo: Women 50+
+0021,Demo: 45+
+0026,Demo: Women 13-17
+0032,Socio Economic: Cash Strapped
+0036,Socio Economic: Essential Workers
+0037,Demo: Women 55+
+0038,Demo: Adults 55+
+0050,Lifestyle: Healthy Lifestyle
+0051,Lifestyle: Green Living
+0052,Lifestyle: Moms/Parenting
+0053,Lifestyle: Beauty Maven
+0054,Lifestyle: Fashion
+0055,Lifestyle: Fitness/Active
+0056,Lifestyle: Sports
+0057,Lifestyle: Music
+0058,Lifestyle: Travel
+0059,Lifestyle: Personal Care
+0060,Lifestyle: Health & Wellness
+0061,Lifestyle: Passionate Progressives
+0062,Lifestyle: Female Collective
+0063,Lifestyle: Community Strong
+0064,Lifestyle: Family with Kids
+0065,Lifestyle: Parents
+0066,Lifestyle: Healthcare Workers
+0067,Lifestyle: Career
+0068,Lifestyle: Business
+0069,Lifestyle: Mental Health
+0072,Past Purchase: Buyers of Duke's
+0073,Past Purchase: Disinfectant/Sanitizer Purchasers
+0074,Past Purchase: TRES Lovers
+0075,Past Purchase: Klondike Cone Buyers
+0078,Past Purchase: Wellness & Immunity Product Purchasers
+0080,Past Purchase: Dry Shampoo Purchasers
+0081,Past Purchase: Acne Sufferers
+0082,Past Purchase: Ready to Heat Purchasers
+0085,Past Purchase: Light Mayo Purchasers/Dieters
+0086,Past Purchase: Sensitive Skin Sufferers
+0087,Past Purchase: Old Spice Users and Buyers
+0089,Past Purchase: Competitive Deo Stick Users
+0090,Past Purchase: Competitive Deo Gel Users
+0091,Past Purchase: Competitive Deo Spray Users
+0092,Past Purchase: Vegan/Plant Based Purchasers
+0093,Past Purchase: Degree Stick AP Users
+0094,Past Purchase: Simplisitic & Sensible
+0095,Past Purchase: Exfoliating
+0096,Past Purchase: Body Wash Purchasers
+0097,Past Purchase: Experiential Body Wash Purchasers
+0098,Past Purchase: Competitive Bar
+0099,Past Purchase: Dove Lovers
+0100,Past Purchase: Dove Competitors
+0101,Past Purchase: Chocolate Lovers
+0102,Past Purchase: Non-Dairy
+0106,Past Purchase: Premium Ice Cream Buyers
+0109,Past Purchase: Neutrogena & Garnier Buyers
+0110,Past Purchase: Competitive St Ives brands
+0111,Past Purchase: Premium Novelty Buyers
+0114,Past Purchase: Competitive Ponds brands
+0115,Past Purchase: Ponds Purchaser
+0116,Past Purchase: Simple Competitive Wipe Users
+0117,Past Purchase: Simple Competitive Micellar Water Users
+0118,Past Purchase: Suave Competitive Brand Buyers
+0121,Custom: Nexxus Qualified
+0122,Custom: Premium Hair Care Buyer
+0123,Custom: Self Care Enthusiast
+0124,Custom: Informed Shopper
+0125,Custom: Destiny Shaper
+0126,Custom: Cord Cutter/Cord Nevers
+0127,Custom: Dandruff Sufferer
+0128,Custom: Finger on the Pulse
+0130,Custom: Nasties Avoiders
+0131,Custom: Carb Conscious
+0132,Custom: Calorie Conscious
+0135,Custom: Routine Hydrators
+0136,Custom: Anti-Aging Skin
+0137,Custom: Glowing/Radiant Skin
+0138,Custom: Healthy Skin
+0139,Custom: SVG State of the Union
+0140,Custom: Pre-Natal Moms 3rd Trimester
+0141,Custom: Post-Natal Moms 0-2 months
+0142,Custom: Dove Gen Z
+0143,Custom: Suave Big Families
+0144,Custom: AHC Beauty
+0145,Custom: Suave Kids
+0146,Custom: Personal Wash Qualified
+0147,Custom: Suave W&C Qualified
+0148,Custom: Mindful Progressive
+0149,Custom: Holistic Green
+0150,Custom: Expecting Mom
+0151,Custom: HL Dukes Competitive
+0152,Custom: Country Pride
+0154,Custom: Suave Looks for Less
+0155,Custom: Dove Qualified
+0156,Custom: Hair Qualified
+0157,Custom: Green & Clean
+0158,Custom: Community Strong
+0159,Custom: Transparency Seeker
+0160,Custom: Talenti Pint Competitors
+0161,Custom: Balanced Foodie
+0162,Custom: Talenti Trendsetter
+0163,Custom: Breyers Engagers
+0166,Custom: Donut Campaign Retargeting
+0167,Custom: IC Postmates
+0168,Custom: IC UberEats
+0169,Custom: IC DoorDash
+0170,Custom: IC GrubHub
+0171,Custom: Baby Dove Pre- & Post-Natal Moms
+0172,Custom: PRM 1P Reactivation/Lapsed Users
+0173,Custom: PRM 1P Net New
+0174,Custom: Dove Actionist
+0175,Custom: PRM 1P Retargeting
+0176,Custom: Full Dove House
+0177,Custom: The Essential Household
+0178,Custom: Varsity Wife
+0179,Custom: Gift Giver Who Gives and Gives
+0180,"Custom: Millenial Lover of ""Boy"" Smells"
+0181,Custom: Natural Deo Buyers
+0182,Custom: DTC Natural Deodorant Buyers (Native only)
+0183,Custom: Heritage Healing Jelly Users
+0184,Custom: Look Good
+0185,Custom: Dove Premium Product
+0186,Custom: Dry & Damaged Solvers
+0187,Custom: Dessert Enthusiasts
+0189,Custom: Ice Cream Fans
+0190,Custom: Nexxus Curly Haired
+0191,Custom: Mild Sensitive Skin
+0192,Custom: Severe Sensitive Skin
+0193,Custom: Hygiene Conscious
+0195,Custom: Mayo Buyers
+0197,Custom: Ice Cream Engagers
+0199,Custom: Moderate Sensitive Skin
+0200,Custom: Walmart Shoppers
+0201,Custom: Target Shoppers
+0202,Custom: Club Shoppers
+0204,Custom: Grocery Shoppers
+0205,Custom: Value Shoppers
+0207,Custom: Behavioral
+0210,Custom: Recovery Junkies
+0211,Custom: Active Workers
+0212,Custom: Desk Hunchers
+0213,Custom: Degree Loyalist
+0214,Custom: Amazon eComm Display Awareness
+0215,Custom: Amazon eComm Display Retargeting
+0216,Custom: Amazon eComm Display Awareness Tentpole
+0217,Custom: Amazon eComm Display Retargeting Tentpole
+0218,Custom: LBP Beloved Target Shoppers
+0221,Custom: Gen Z Acne Sufferers (A18-24)
+0223,Custom: Football/Sports Fans
+0224,Custom: Gifting enthusiasts and Candle Purchasers
+0226,Custom: Non-Stylers
+0227,Custom: CerVe Purchasers
+0229,Custom: Premium Product / Dry Damaged Solvers
+0230,Custom: Hair Stylers
+0231,Custom: Dove Hand Hygiene Qualified
+0232,Custom: Degree Lovers
+0233,Custom: Eco-Conscious
+0234,Custom: Organic & Native Buyer
+0235,Custom: Fragrance Seeker
+0236,Past Purchase: Competitive OPP BW
+0237,Custom: Dual users Bar/BW
+0238,Custom: Savvy Shopper/Responsible Splurger
+0239,Custom: Heritage Ambassador
+0240,Custom: Breyers Super Segment
+0241,Custom: Natural Seekers
+0242,Custom: Hellmann's Purpose Audience
+0243,Custom: Conscious Conumers
+0244,Custom: Solution Seekers
+0245,Custom: Dry/Frizzy Hair Sufferers
+0248,Custom: Beauty Enthusiasts
+0253,Custom: Spicy Mayo Users
+0254,Custom: TRESemme Choreograph Audience Model A
+0255,Custom: TRESemme Choreograph Audience Model B
+0256,Custom: Foodies
+0257,Custom: TRES Loyalist
+0258,Custom: Competitive W&C Buyers
+0260,Custom: DMC Parent/Solo Guy
+0261,Custom: Healthy Eating
+0262,Past Purchase: Competitive Baby Wash Purchasers
+0263,Custom: Experiential Seeker
+0264,Past Purchase: Female HH Shoppers
+0265,Past Purchase: Male DSC and Gillette Purchasers
+0266,Custom: Superbowl Food Purchasers/ Enthusiasts
+0268,Custom: Polished Consumer
+0269,Custom: Light Green
+0270,Custom: Women 18:49 with interest Plus Model Magazine
+0271,Custom: Deodorant Efficacy Seeker
+0272,Custom: Hair Thinning & Loss
+0273,Custom: Talenti Brand Buyers
+0274,Custom: Gray Hair Walmart Shopper
+0275,Custom: Curly Hair Walmart Shopper
+0276,Custom: Hispanic Walmart Shopper
+0277,Custom: Michiru Qualified
+0278,Custom: Clean Sustainable
+0279,Custom: DMC Lovers
+0280,Custom: Eczema
+0281,Custom: Face Care
+0282,Custom: Competitive Skin Cleansing Buyers
+0283,Custom: Active Women
+0284,Custom: Heavy & Anxious Sweaters/Competitive Clinical Purchasers
+0285,Custom: Competitive Sandwich Buyers
+0286,Custom: No Sugar Added
+0287,Custom: Hellmann's Letterman Jacket
+0288,Custom: Quick and Easy Cooks
+0289,Custom: Food Service Industry Decision Maker
+0290,Past Purchase: Competitive HH Purchasers
+0291,Custom: More is More
+0292,Custom: Sorbetto Buyers
+0293,Custom: Gelato Buyers
+0295,Custom: Adventurous Flavor Seekers
+0296,Custom: Dull Skin
+0297,Custom: Treating & Indulging
+0298,Custom: Flavors
+0299,Custom: Sensitivity Seekers + Irritation Sufferer
+0300,Custom: Native Shoppers
+0301,Custom: Old Spice Men
+0302,Custom: Male Routine Follower
+0303,Custom: Family Men
+0304,Custom: Women Shopping for Men
+0307,Custom: Dry Skin Sufferers
+0308,Custom: Single Category Male DM+C Shoppers
+0309,Custom: Deo Stick Purchasers Interested in Dry Sprays
+0310,Competitive: Olay Purchasers
+0311,Competitive: Heavy BW Category Purchasers
+0312,Custom: Male Hair Stylers
+0313,Competitive: Deo Purchaser
+0315,Custom: Young Shapeshifter
+0319,Custom: DM+C Category RTG 25-44
+0323,Demo: Men 13-34
+0324,Custom: Lifestyle Collection_Third Party Skincare/Beauty Brands and Acne Interest
+0325,Custom: Radiant Trailblazers
+0326,Custom: USH Radiant Trailblazers
+0327,Custom: Beautifully Me
+0328,Custom: Beauty Preservers
+0329,Demo: USH Women
+0330,Custom: Beauty Preservers D-Cipher
+0331,Custom: Beautifully Me D-Cipher
+0333,Custom: Underarm Care
+0334,Lifestyle: Female Entertainment
+0335,Lifestyle: Male Entertainment
+0337,Custom: Will Levis Agility
+0338,Custom: Flavorful Family (USH)
+0339,Custom: Flavorful Family (GM)
+0340,Custom: Fresh Flavor Explorers
+0341,Custom: Speedy Parenting
+0342,Custom: Young Professionals A18-34
+0343,Custom: Evolved Eater
+0345,Custom: Site Visitors
+0346,Custom: Evolved Eater (A25-49)
+0347,Custom: ShowerTok
+0350,Custom: Ambitious Beauties
+0351,Custom: Healthy Hair Seekers
+0352,Custom: Mindful Lux Lovers
+0353,Past Purchase: Nexxus Nolita Amino Competitive Purchasers
+0354,Custom: Hair Care Seeker
+0355,Custom: Busy Beauties
+0357,Custom: YOLO
+0358,Past Purchase: Styling Product Purchasers
+0361,Custom: Natural Ingredients
+0363,Custom: Dove Women
+0364,Past Purchase: Head & Shoulders Purchasers
+0365,Custom: Anti-Dandruff Concern
+0366,Custom: Skin Care Men
+0367,Custom: Sports Enthusiast
+0369,Custom: Chic Balancers
+0370,Past Purchase: TRES Competitive Purchasers
+0371,Custom: Hydration Seeking Mom
+0372,Custom: Luxury Health Seeker
+0373,Custom: Scalp & Hair Loss Concern
+0374,Custom: Dove Hair Buyers
+0375,Custom: Heartland Nurturer
+0376,Custom: Savvy Trendseeker
+0377,Custom: Competitive Dry & Damaged Solvers
+0378,Custom: Health Seekers
+0380,Custom: USH Beautifully Me
+0381,Custom: Skincare Enthusiasts
+0382,Past Purchase: Paula's Choice Purchasers 1P
+0383,Custom: Health Loyalist
+0384,Custom: Trendy Clean
+0385,Custom: Beauty Engagers
+0386,Custom: Engager Retargeting
+0387,Custom: Young Pesterers
+0388,Custom: Attractive Expressionists
+0389,Custom: Wired Enthusiast
+0390,Custom: Moms With Gen-Z in Household
+0391,Custom: Menopausal Women
+0392,Custom: Competitive Purchasers
+0393,Custom: Intimate Feminine Deo
+0394,Custom: Odor Moments
+0395,Custom: Evolved Men
+0396,Custom: Below the Belt Solutions Seekers
+0397,Custom: Wellness Seekers
+0398,Custom: Medicated Skin
+0400,Custom: Better for You
+0401,Custom: Devoteds
+0402,Custom: Retargeting HLM Superbowl Top View Engagers
+0405,Custom: Retargeting SEC Engagers
+0406,Custom: Flavor Afficionados
+0407,Custom: Retargeting Top Feed Engagers
+0408,Custom: Retargeting 2023 Will Levis Engagers LAL
+0409,Custom: Naturals Competitive
+0410,Custom: Yasso Devoteds
+0411,Custom: Dijon Buyers
+0412,Custom: Retargeting W18+ Exposed Dove Masterbrand
+0413,Custom: Eco Millennials
+0414,Custom: Retargeting Foaming Dish Engagers-Top View
+0415,Custom: DM+C Basket Builder
+0416,Custom: Axe Lovers
+0420,Custom: Therapeutic Skin
+0421,Custom: Clean Beauty
+0423,Custom: Adults With Skin Conditions
+0424,Custom: Regional Premium PIC (Market A)
+0425,Custom: Regional Premium PIC (Market B)
+0426,Custom: Frozen Novelty Buyers
+0427,Custom: Cone Lovers
+0429,Custom: Hispanic Product Purchasers
+0430,Custom: Beauty Purchasers at Ulta
+0431,Custom: In Market for SkinCare&Beauty
+0432,Custom: Dermalogica Purchasers
+0434,Custom: Sam's Club Shoppers
+0435,Custom: Discovery Precision Targeting
+0436,Custom: Talenti Lifestyle A25-54 Steering
+0437,Custom: Heavy Shavers
+0438,Custom: Secret Users
+0441,Demo: Women 45+
+0442,Custom: USH W25-64 Food Lovers
+0445,Custom: Coupon Clippers
+0446,Custom: SC Fight Hunger Support HLMS
+0447,Custom: SC Fight Hunger Suppoert BF
+0448,Custom: Sensorial Engagers
+0449,Custom: Delivery App Users
+0450,Custom: Lifestyle A18+ Steering
+0451,Custom: Active Men
+0452,Custom: Retargeting QEC Engagers
+0455,Custom: Lifestyle Steering
+0457,Custom: Father's Day Interest
+0458,Custom: Veganuary Retargeting
+0460,Custom: Bradley Cooper Retargeting
+0462,Custom: Hustle & Glow
+0463,Custom: Routine Queen
+0464,Custom: Food & Music
+0466,Custom: Beauty Quiz Completers and Beauty Tech Enthusiasts
+0468,Custom: A18+ Tubi Good Eats Collection
+0469,Custom: Melanin Rich
+0470,Custom: Health & Beauty
+0471,Custom: Shea Deo Competitors
+0473,Custom: Shea Buyers
+0474,Custom: Shea Hair Purchasers
+0475,Custom: Bond Repair Competitive
+0476,Custom: Mielle Oil Lovers
+0477,Custom: Soccer Fans
+0480,Custom: Amazon Shoppers
+0481,Custom: Deal Seekers
+0482,Custom: Laundry Packs
+0485,Custom: Maggie Buyers
+0486,Custom: Skin Care Trend Seekers
+0487,Custom: Deodorant Searchers
+0488,Custom: PRM 1P Knorr
+0489,Custom: Holiday Enthusiasts
+0490,Custom: Nexxus Beauties
+0491,Custom: Tennis Enthusiasts
+0493,Custom: College Students
+0494,Custom: Basketball Fans
+0495,Custom: Walmart Deo Shoppers
+0496,Custom: Deodorant Interest
+0497,Custom: Hip-Hop Fans
+0498,Custom: Fall Football Enthusiasts
+0499,Custom: Competitive Face Care Buyer
+0500,Custom: Geo-Targeting
+0501,Custom: Football Fans and Foodies
+0504,Custom: RTG Superbowl Engagers
+0506,Custom: Glow Getters
+0507,Custom: Thanksgiving Interests
+0508,Custom: Recipe Users & Vanilla Ice Cream Purchasers
+0509,Custom: Holiday Hosting and Recipes
+0510,Custom: Nexxus Beauties + Mindful Lux Lovers
+0511,Custom: Knorr Top Dish TTD Custom Audience via Brand Intent (IBI Built)
+0512,Custom: Knorr Top Dish Consumer Consideration Audience
+0514,Custom: Skin Care Trend Seekers Retargeting
+0515,Custom: Knorr BTS MMM FY24 Retargeting
+0516,Custom: Efficacious Beauty Seeker
+0517,Custom: Retargeting SheaMoisture Oils Exposure Pool
+0518,Custom: Retargeting SHeaMoisture Skin Cleansing Exposure Pool
+0519,Custom: Pandora Shea SCL Bundled Audiences
+0520,Custom:  Maille Holiday MMM FY24 Retargeting
+0521,Custom: Wicked Fans
+0523,Custom: Female Whole Body Deo Interest
+0524,Custom: Male Whole Body Deo Interest
+0528,Custom: KHC & Dove Engagers
+0529,Custom: Devoteds 2.0
+0530,Custom: Crumbl Community
+0531,Custom: Cups Audience
+0533,Custom: Fall Football Retargeting
+0535,Custom: Parents 25-54
+0537,Custom: Flavorful Family (USH + GM)
+0538,Custom: Gen Z Quick & Easy Cooks
+0539,Custom: IC Sandwich Lovers
+0541,Custom: Body Oil Enthusiasts
+0542,Custom: Female Whole Body Deo Competitive
+0543,Custom: Male Whole Body Deo Competitive
+0544,Custom: Easter Interests
+0546,Custom: Category Female Purchasers
+0547,Custom: Category Male Purchasers
+0548,Custom: Dynamic Doers
+0549,Custom: Modern Gentleman
+0550,Custom: Simple Care Man
+0551,Custom: Mindful Yolo
+0552,Custom: Etoile Retargeting
+0553,Custom: IC Bar Buyers
+0555,Custom: MikMak Retargeting
+0556,Custom: Deo Category Purchasers
+0557,Custom: Grammys Audience
+0558,Demo: USH M18-49
+0559,Custom: Type 4 Hair Needs
+0560,Custom: Chic Shifters
+0561,Custom: Axe Category Purchasers
+0562,Custom: Baby Dove Competitors
+0563,Demo: Broad Women
+0564,Demo: Broad Men
+0565,Demo: Broad
+0566,Demo: Broad USH
+0567,Demo: Broad AA/Black
+0568,Demo: USH Men
+0569,Custom: Adventurous Foodies
+0570,Custom: S'mores Lovers
+0571,Custom: Better for you Fruit Fans
+0572,Custom: Competitive Frozen Novelty Buyer
+0573,Custom: Caramel Lovers
+0574,Custom: Oscars Audience
+0575,Custom: Energetic Trendseekers
+0576,Custom: Routine Queen/Hustle & Glow
+0577,Custom: USH Engager Retargeting
+0578,Custom: Ice Cream/Desserts Interests
+0579,Custom: Face & Skin Care Enthusiasts
+0580,Custom: Asian Face & Skin Care Enthusiasts
+0581,Custom: Baked Good Enthusiasts
+0582,Custom: Smores Lovers
+0583,Custom: Cash Strapped Millennials
+0584,Custom: RTG Crumbl Engagers
+0585,Custom: Pattie Gonia Retargeting
+0586,Custom: BravoTV Viewers
+0587,Custom: CVS Shoppers
+0588,Custom: Summer Cohort
+0589,Custom: Millennial Moms (W25+)
+0590,Custom: Water Ice Buyers
+0591,Custom: Keywords on Popsicle and Competitors
+0592,Custom: Category Ice Water Shoppers
+0593,Custom: Male Go Getter
+0594,Custom: Female Go Getter
+0595,Custom: Popsicle Retail
+0596,Past Purchase: Male Competitive
+0597,Past Purchase: Female Competitive
+0598,Custom: Flavormakers
+0599,Custom: Klondike Bar and Cone Buyers
+0600,Custom: SVG Adjacent Interests
+0601,Custom: Vizio ReEngager
+0602,Custom: Nexxus Beauties + Yolo
+0603,Custom: Baking and Cookie Lovers
+0604,Custom: High Frozen Shoppers
+0605,Custom: Medium Frozen Shoppers
+0606,Custom: Low Frozen Shoppers
+0607,Custom: The Fun House Shoppers and NOT POP
+0608,Custom: Fans of Marvel/Spongebob/Toy Story and NOT POP
+0609,Custom: Kroger Shoppers
+0610,Custom: Walgreens Shoppers
+0611,Custom: Shea & Competitors
+0613,Custom: Competitive + Holiday Treats Engagers
+0614,Custom: Costco Shoppers
+0615,Custom: Proud Nerds
+0616,Custom: Sparkling Socialites
+0617,Custom: Shimmer Seekers
+0618,Custom: Costco Skincare Enthusiasts
+0619,Custom: Emily Zugay Proxy
+0620,Custom: Breyers BFY Disney incremental
+0621,Custom: Teachers
+0622,Custom: Target Beauty Enthusiasts
+0623,Custom: Future Foodies
+0624,Custom: Social Movers
+0625,Custom: Skin Enthusiasts
+0626,Custom: Pure Skin
+0628,Custom: Bridgerton Fans
+0629,Custom: Garden Party Engagers
+0630,Demo: Broad AA/Black Women
+0632,Custom: Skin Naturalists
+0633,Custom: Luxe Lovers
+0634,Custom: Athletes & Sports Fans
+0635,Custom: Yasso Pint Competitors
+0636,Custom: Conscious Dieters
+0637,Custom: Millennial FN Buyers
+0638,Custom: Female Entrepreneurs
+0639,Custom: Lapsed Buyers
+0640,Custom: Love And Romance
+0641,Custom: Nasty Avoiders + Alu-free
+0642,Custom: Costco W&C Shoppers
+0643,Custom: Klondike Buyers
+0644,Custom: Indulgence Seekers
+0645,Custom: Breyers Traditionalist 
+0646,Custom: Breyers BFY
+0647,Custom: Licensing Super Fans
+0648,Custom: Instacart CR Breyers PIC
+0649,Custom: FIFA Male Fans
+0650,Custom: FIFA Female Fans
+0651,Custom: DM+C FIFA Fans
+0652,Custom: Male Sweaty Hustler
+0653,Custom: Female Sweaty Hustler
+0654,Custom: Frequent Deodorant Applicators
+0655,Custom: Walmart & Amazon Deodorant Shoppers
+0656,Custom: Male Hustler
+0657,Custom: Female Hustler
+0658,Custom: Wellness Explorers
+0659,Custom: Fresh Seekers
+0660,Custom:Scalp Revivalists
+0661,Custom:Style Shifters
+0662,Custom: Curlfriend
+0663,Custom:Heat Treaters
+0664,Lifestyle: AA/Black Parents
+0665,Custom: Holiday Meal Buyers
+0666,Past Purchase: Moveable Buyer
+0667,Past Purchase: Brand Propensity
+0668,Custom: Treating & Indulging + Holiday Enthusiasts
+0669,Custom: Culture & Entertainment Enthusiasts
+0670,Custom: Luxury Lite Girl
+0671,Custom: Tailgating and Grilling Food Buyers
+0672,Custom: Holiday/Thanksgiving Meal Buyers 
+0673,Demo: Black Men 
+0674,Custom: Competitive W&C Buyers + Hair Treatment Competitive Purchasers
+0675,Custom: Asian Hair Care Enthusiasts
+0676,Custom: Nexxus Lovers
+0677,Custom: Crystallizer Queen
+0678,Custom: Pinterest Predicts Cabbage Crush
+0679,Custom: Broad Food & Drinks
+0680,Custom: Premium Selfcare Enthusiasts
+0681,Custom: Dry & Damaged Solvers + Dream Competitive Purchasers
+0682,Custom: Beauty Craze Chasers
+0683,Custom: Lip Lovers
+0684,Custom: Premium Prioritisers
+0685,Custom: Scalp & Skincare Seekers
+0686,Competitive: Dandruff W&C Purchasers
+0687,Competitive: Density-Boosting Purchasers
+0688,Custom: Treating & Indulging + Bridgerton Fans
+0689,Custom: Household Heros
+0690,Custom: DM+C Lovers + Dove Lovers
+0691,Custom: Sensorial Seekers
+0692,Custom: A-List Competitive + Tres Loyalists
+0693,Custom: Instacart Shoppers
+0694,Custom: Kraft Buyers
+0695,Custom: Young Guys
+0696,Custom: FIFA Young Guys
+0697,Custom: Walmart Category Shoppers
+0698,Custom: Search Keywords
+0699,Custom: Everyday Healing Seeker
+0700,Competitive: Dandruff Wash & Care + Density Boosting Purchasers
+0701,Custom: DM+C Lovers + Dove Lovers + DM+C Competitive Purchasers
+0702,Custom: Busy Mealtime Navigators
+0703,Custom: Family Recipe Keepers
+0704,Custom: Knorr Lovers
+0705,Custom: Kitchen Experimenters
+0706,Custom: Knorr Category Purchasers
+0707,Custom: Male Scalp & Skincare Seekers
+0708,Custom: Female Scalp & Skincare Seekers
+0709,Custom: Styling Maven
+0710,Custom: Numerator Competitive Purchaser
+0711,Custom: Dove Lovers + Dry & Damaged Solvers
+0712,Custom: Engager & Site Retargeting
+0713,Custom: Flavorchaser
+0714,Custom: Walmart Young Guys
+0715,Custom: Axe Deo Retargeting
+0716,Custom: ACT Rotation Group
+0717,Custom: Hustlers
+0718,Custom: Pinterest Persona
+0719,Custom: Keyword Retargeting 
+0720,Demo: Adults 25+
+0721,Custom: Male Summer Sweaters
+0722,Custom: Female Summer Sweaters
+0723,Custom: Degree Lovers + Efficacy Seekers
+0724,Past Purchase: Sportswear + Supplements
+0725,Past Purchase: Costco Non-BPC Purchasers
+0726,Custom: Deal-Driven Hair Spray Buyers
+0727,Custom: Salon/Premium Hair Care Buyers
+0728,Custom: Skin Savers
+0729,Custom: Engager Retargeting + MikMak Retargeting + Site Visitors
+0730,Custom: EOS Buyers
+0731,Custom: PC Shoppers

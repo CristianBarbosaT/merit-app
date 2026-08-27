@@ -18,7 +18,12 @@ This tool reads your delivery files, finds every one of those rows automatically
 
 You need one or more delivery files (`.xlsx`) — the same files you already receive, no changes needed. You can upload a single file with several brands in it, or one file per brand, or a mix; the tool combines them all before looking for anything.
 
-Your files need these columns: Channel, Date, Brand, Category, Prisma_Campaign_Secondary, Raw_Partner, Package_Placement_Name, Impressions, Media_Cost. Retailer, GRPs and Video_Views are used if present but not required.
+**Pick the file format** with the "Delivery file format" selector before uploading — every file in that batch is read with the same one:
+
+- **RROI** — the standard raw delivery schema: Channel, Date, Brand, Category, Prisma_Campaign_Secondary, Raw_Partner, Package_Placement_Name, Impressions, Media_Cost. Retailer, GRPs and Video_Views are used if present but not required.
+- **LCA** — the same fields, plus extra columns the tool ignores (Partnership, Campaign, Product_Line, Subcategory, Format, Audience, Daypart, Breakout, Clicks), with `Media Cost` and `Video Views` spelled with a space instead of an underscore.
+
+If you upload files in both formats, run them through in two separate batches — read and generate the RROI ones, **Start over**, switch the selector, then read and generate the LCA ones.
 
 You do **not** need to provide the Data Caveat Log template — the tool has the official one built in. Only upload your own if you've been told to use a different approved version.
 
@@ -101,6 +106,7 @@ If validation finds nothing at all, you'll see a plain confirmation that the dat
 ## Important rules & restrictions
 
 - **Detection always happens at placement + month**, never at the single-day level for the log itself — "Any single day" mode only changes *which* placement-months qualify, the output is still one row per placement-month either way.
+- **The Month column includes the year**, shown as `Jun-26`. It's written as a real date (which is what the template's own Month dropdown expects), so it sorts and filters correctly in Excel, and a log covering more than a year never leaves you guessing which `Jun` a row means.
 - **Channels without a Campaign or Placement column filled in** (commonly TV) can only be checked at Partner + Month — that's the finest grain the data actually supports there.
 - **A brand with zero caveats still gets a file by default** — an empty but correctly formatted log, so the batch is always complete. Turn off "Generate a file even if a brand has no caveats" if you'd rather skip those entirely.
 - **Nothing is generated until you click "Generate Data Caveat Logs."** Uploading and adjusting settings are always safe.
@@ -123,7 +129,7 @@ If validation finds nothing at all, you'll see a plain confirmation that the dat
 
 ## Quick recap
 
-1. Upload your delivery file(s) → **Read files**.
+1. Pick the delivery file format (RROI or LCA), then upload your delivery file(s) → **Read files**.
 2. Check the files-read table for anything unexpected.
 3. Set the date range, detection granularity, and INC#.
 4. **Generate Data Caveat Logs.**

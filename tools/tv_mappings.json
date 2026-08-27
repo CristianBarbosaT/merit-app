@@ -1,0 +1,106 @@
+{
+  "_comment": "Mapping tables for the TV Data Standardization tool. Edit here rather than in Python. 'estimate_names' maps a raw ESTIMATE NAME to its clean name and daypart; 'networks' maps a raw NETWORK (code + name) to the platform's Network_Name; 'daypart_to_platform' bridges the DATA daypart to the platform's Daypart wording; 'product_brands' maps a product code to its brand.",
+  "estimate_names": {
+    "25/26 CABLE SPORTS": {
+      "clean": "CABLE SPORTS",
+      "daypart": "CABLE SPORTS"
+    },
+    "25/26 CINEMA": {
+      "clean": "CINEMA",
+      "daypart": "CINEMA"
+    },
+    "25/26 EARLY MORNING": {
+      "clean": "EARLY MORNING",
+      "daypart": "EARLY MORNING"
+    },
+    "25/26 HISPANIC ROS": {
+      "clean": "HISPANIC ROS",
+      "daypart": "HISPANIC"
+    },
+    "25/26 NEWS": {
+      "clean": "NEWS",
+      "daypart": "NEWS"
+    },
+    "25/26 WOMEN'S CABLE": {
+      "clean": "WOMEN'S CABLE",
+      "daypart": "WOMEN'S CABLE"
+    },
+    "PRIME '25/26": {
+      "clean": "PRIME",
+      "daypart": "PRIME"
+    }
+  },
+  "networks": {
+    "ABC ABC-TV": "ABC-TV",
+    "ACCN ACC NETWORK": "ACC NETWORK",
+    "ASPR ASPIRE": "ASPIRE",
+    "BEIH BEIN SPORTS SPANISH": "BEIN SPORTS SPANISH",
+    "BETH BET HER": "BET HER",
+    "BET BLACK ENTERTAINMENT": "BLACK ENTERTAINMENT",
+    "BOU BOUNCE TV": "BOUNCE TV",
+    "BRAV BRAVO": "BRAVO",
+    "CNN CABLE NEWS NETWORK": "CABLE NEWS NETWORK",
+    "CBS CBS TV NETWORK": "CBS TV NETWORK",
+    "CLTV CLEO TV": "CLEO TV",
+    "CMT COUNTRY MUSIC TV": "COUNTRY MUSIC TV",
+    "DISF DISCOVERY FAMILIA": "DISCOVERY FAMILIA",
+    "DHT DISCOVERY HOGAR": "DISCOVERY HOGAR",
+    "EET E! ENTERTAINMENT TV": "E! ENTERTAINMENT TV",
+    "ESPN ESPN": "ESPN",
+    "ESPD ESPN DEPORTES": "ESPN DEPORTES",
+    "ESP ESPN2": "ESPN2",
+    "ESPU ESPNU": "ESPNU",
+    "ESTR ESTRELLA TV NETWORK": "ESTRELLA TV NETWORK",
+    "FOX FOX BROADCASTING CO": "FOX BROADCASTING CO",
+    "FOXX FOX NEWS": "FOX NEWS",
+    "FSW FOX SPORTS WORLD ESP": "FOX SPORTS WORLD ESP",
+    "FRFM FREEFORM": "FREEFORM",
+    "FSON FS1": "FS1",
+    "FUSE FUSE": "FUSE",
+    "HALL HALLMARK CHANNEL": "HALLMARK CHANNEL",
+    "HGTV HGTV-HD": "HGTV-HD",
+    "ITN INDEPENDENT TV NETWORK": "INDEPENDENT TV NETWORK",
+    "DIST INVESTIGATION DISCOVERY": "INVESTIGATION DISCOVERY",
+    "LIFE LIFETIME": "LIFETIME",
+    "LIMO LIFETIME MOVIES": "LIFETIME MOVIES",
+    "MLBN MLB NETWORK": "MLB NETWORK",
+    "MSNB MSNBC": "MSNBC",
+    "MTV MTV NETWORKS": "MTV NETWORKS",
+    "NBC NBC-TV": "NBC-TV",
+    "NAN NICK AT NITE": "NICK AT NITE",
+    "NICK NICKELODEON": "NICKELODEON",
+    "OWN OPRAH WINFREY NETWORK": "OPRAH WINFREY NETWORK",
+    "OXC OXYGEN CABLE": "OXYGEN CABLE",
+    "REVO REVOLT TV & MEDIA": "REVOLT TV & MEDIA",
+    "SEC SEC NETWORK": "SEC NETWORK",
+    "TMG TELEMUNDO PRODUCTION": "TELEMUNDO PRODUCTION",
+    "TUDN TELEVISA UNIVISION DEPRT": "TELEVISA UNIVISION DEPRT",
+    "TLC THE LEARNING CHANNEL": "THE LEARNING CHANNEL",
+    "TWC THE WEATHER CHANNEL": "THE WEATHER CHANNEL",
+    "TNT TNT": "TNT",
+    "TBS TURNER BROADCASTING": "TURNER BROADCASTING",
+    "TFN TV FOOD NETWORK": "TV FOOD NETWORK",
+    "TVL TV LAND": "TV LAND",
+    "TVO TV ONE": "TV ONE",
+    "UMA UNIMAS": "UNIMAS",
+    "UNI UNIVISION NETWORK": "UNIVISION NETWORK",
+    "USA USA NETWORK": "USA NETWORK",
+    "WET WE TV": "WE TV",
+    "XNCN NATIONAL CINEMEDIA": "XNCN NATIONAL CINEMEDIA",
+    "XSVN SCREENVISION": "XSVN SCREENVISION"
+  },
+  "daypart_to_platform": {
+    "CABLE SPORTS": "Cable Sports",
+    "EARLY MORNING": "Early Morning",
+    "HISPANIC": "Hispanic",
+    "NEWS": "News",
+    "PRIME": "Prime",
+    "WOMEN'S CABLE": "Women Cable",
+    "CINEMA": null
+  },
+  "product_brands": {
+    "DHC": "Dove",
+    "TRE": "TRESemme",
+    "VIC": "Vaseline"
+  }
+}

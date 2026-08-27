@@ -2,7 +2,7 @@
 
 A friendly, no-jargon walkthrough of what this tool does and how to use it.
 
-> This app now opens on a **home menu** with more than one tool. This guide covers **RROI Manual Backfill** — open it from the menu, or from inside the app click **"← Back to menu"** at any time to switch tools. For the **Data Caveats Generator**, see `DATA_CAVEATS_GUIDE.md`.
+> This app now opens on a **home menu** with more than one tool. This guide covers **RROI Manual Backfill** — open it from the menu, or from inside the app click **"← Back to menu"** at any time to switch tools. For the other tools see `DATA_CAVEATS_GUIDE.md` and `TV_STANDARDIZATION_GUIDE.md`.
 
 ---
 

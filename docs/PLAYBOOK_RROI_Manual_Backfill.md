@@ -1,8 +1,10 @@
-# M.E.R.I.T APP — RROI Manual Backfill User Guide
+# Playbook — RROI Manual Backfill
 
-A friendly, no-jargon walkthrough of what this tool does and how to use it.
+**Tool 3 of 5 in the M.E.R.I.T. APP** · A friendly, no-jargon walkthrough of what this tool does and how to use it.
 
-> This app now opens on a **home menu** with more than one tool. This guide covers **RROI Manual Backfill** — open it from the menu, or from inside the app click **"← Back to menu"** at any time to switch tools. For the other tools see `DATA_CAVEATS_GUIDE.md` and `TV_STANDARDIZATION_GUIDE.md`.
+> Open this tool from the **M.E.R.I.T. APP** home menu, or click **"← Back to menu"** inside the app at any time to switch tools.
+>
+> New here? Start with the [Overview explainer](EXPLAINER_Overview.md). For where this tool sits in the monthly cycle, see the [Monthly Workflow explainer](EXPLAINER_Monthly_Workflow.md). Unfamiliar terms are in the [Glossary](EXPLAINER_Glossary.md).
 
 ---
 

@@ -1,8 +1,10 @@
-# M.E.R.I.T APP — Data Caveats Generator User Guide
+# Playbook — Data Caveats Generator
 
-A friendly, no-jargon walkthrough of what this tool does and how to use it.
+**Tool 5 of 5 in the M.E.R.I.T. APP** · A friendly, no-jargon walkthrough of what this tool does and how to use it.
 
-> Open this tool from the **M.E.R.I.T APP** home menu. Click **"← Back to menu"** at any time to switch to another tool, like RROI Manual Backfill (see `USER_GUIDE.md`).
+> Open this tool from the **M.E.R.I.T. APP** home menu, or click **"← Back to menu"** inside the app at any time to switch tools.
+>
+> New here? Start with the [Overview explainer](EXPLAINER_Overview.md). For where this tool sits in the monthly cycle, see the [Monthly Workflow explainer](EXPLAINER_Monthly_Workflow.md). Unfamiliar terms are in the [Glossary](EXPLAINER_Glossary.md).
 
 ---
 

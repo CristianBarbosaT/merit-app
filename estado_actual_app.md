@@ -16,14 +16,28 @@
 
 ```
 merit_V1/
+├── README.md                       # Repo entry point + documentation index — see §21
 ├── app.py                          # M.E.R.I.T. shell: home menu + tool registry/mounting only
 ├── tools/
 │   ├── __init__.py
-│   ├── rroi_backfill.py            # The entire backfill tool (formerly all of app.py) — see §2-14
-│   ├── data_caveats.py             # Data Caveats Generator — see §15
-│   ├── data_caveats_template.xlsx  # Bundled default Data Caveat Log template (25 KB)
+│   ├── merit_inspect.py            # Merit Inspect — see §18
 │   ├── tv_standardization.py       # TV Data Standardization — see §16
-│   └── tv_mappings.json            # Its lookup tables (estimate names, networks, dayparts, brands)
+│   ├── rroi_backfill.py            # The entire backfill tool (formerly all of app.py) — see §2-14
+│   ├── merit_deliver.py            # Merit Deliver — see §18
+│   ├── data_caveats.py             # Data Caveats Generator — see §15, §17, §19, §20
+│   ├── data_caveats_template.xlsx  # Bundled default Data Caveat Log template (25 KB)
+│   ├── tv_mappings.json            # TV lookup tables (estimate names, networks, dayparts, brands)
+│   └── config/
+│       └── audience_codes.csv      # Merit Inspect's audience catalog (586 codes)
+├── docs/                           # Non-technical documentation — see §21
+│   ├── EXPLAINER_Overview.md           # What M.E.R.I.T is, the problem, the five tools
+│   ├── EXPLAINER_Monthly_Workflow.md   # How the tools chain across a monthly cycle
+│   ├── EXPLAINER_Glossary.md           # Domain vocabulary
+│   ├── PLAYBOOK_Merit_Inspect.md
+│   ├── PLAYBOOK_TV_Data_Standardization.md
+│   ├── PLAYBOOK_RROI_Manual_Backfill.md
+│   ├── PLAYBOOK_Merit_Deliver.md
+│   └── PLAYBOOK_Data_Caveats_Generator.md
 ├── requirements.txt                # streamlit, pandas, openpyxl (no pinned versions)
 ├── .venv/                          # Local virtual environment (not versioned)
 ├── test_logic.py                   # RROI Backfill: taxonomy, operations, multi-value subsets, lock, build_preview
@@ -32,16 +46,13 @@ merit_V1/
 ├── test_real_file.py               # RROI Backfill: the real 150k-row workbook through taxonomy + every operation
 ├── test_data_caveats.py            # Data Caveats: pipeline functions + a real write against the bundled template
 ├── test_tv_standardization.py      # TV: synthetic logic tests + the real-file §10 control-figure regression
-├── test_apptest_home.py            # Home menu navigation + Data Caveats settings/generate/download, via AppTest
-├── USER_GUIDE.md                   # Non-technical user manual — RROI Manual Backfill
-├── DATA_CAVEATS_GUIDE.md           # Non-technical user manual — Data Caveats Generator
-├── TV_STANDARDIZATION_GUIDE.md     # Non-technical user manual — TV Data Standardization
+├── test_apptest_home.py            # Home menu navigation + Data Caveats / TV / Inspect / Deliver mounting, via AppTest
 └── estado_actual_app.md            # This document
 ```
 
 **Relevant installed versions** (`.venv`): `streamlit==1.59.2`, `pandas==3.0.3`, `openpyxl==3.1.5`.
 
-Git repository hosted on GitHub at `https://github.com/CristianBarbosaT/merit-app` (branch `main`). No `README.md` file. **The `tools/` package and its tests are new, uncommitted work** — not yet pushed.
+Git repository hosted on GitHub at `https://github.com/CristianBarbosaT/merit-app` (branch `main`).
 
 **Sections 2–14 below describe `tools/rroi_backfill.py`** exactly as they described `app.py` before this restructure (only the module changed, not the code or behavior). §15 covers the new shell and the Data Caveats Generator.
 
@@ -623,3 +634,47 @@ The day-level flags (`RowNullCost`/`RowNullImpr` per row, `DaysNullCost`/`DaysNu
 ### Testing
 
 `test_data_caveats.py` TEST C was rewritten: it used to assert the masked-day case produced 0 caveats under `"month"` and 1 under `"row"`; it now asserts only the former, since `"row"` no longer exists, while confirming `DaysNullImpr`/`MaskedNullImpr` still compute correctly (proving the validation finding they feed is unaffected). Every other `classify()` call site in the test file (and in `render()`) dropped the now-removed second argument. Both the user guide (`DATA_CAVEATS_GUIDE.md`) and this file's own historical §15/§16 mentions of the two-mode UI were left as-is where they describe the tool's state *at the time they were written*; only genuinely live documentation (the guide's settings walkthrough, its "Important rules" list, and its quick recap) was updated to match the new behavior.
+
+## 21. Documentation restructure: explainers + playbooks (2026-08-27)
+
+### Why
+
+A request from leadership: the user guides should be "real clean", renamed **playbooks**, with **high-level explainers** alongside them, and there should be more of both — the intent being to reuse the material as one-pagers and white papers.
+
+Two real gaps existed independently of the naming: **Merit Inspect and Merit Deliver had no documentation at all** (they arrived via the `merit_V1` fork in §18, and that fork documented neither), and there was **no `README.md`** — the repo had no entry point and no index.
+
+### The structure
+
+Documentation now splits by audience, which is the distinction the request was really asking for:
+
+- **Explainers** — about the app as a whole, for someone who will never open it. This is the one-pager / white-paper source material.
+- **Playbooks** — how to operate one tool, for whoever runs the monthly cycle.
+
+```
+README.md                              # entry point + index + how to run + repo layout
+docs/EXPLAINER_Overview.md             # what M.E.R.I.T is, the problem, the 5 tools, design principles
+docs/EXPLAINER_Monthly_Workflow.md     # how the tools chain: 2 -> 1 -> 3 -> 1 -> 4, with 5 alongside
+docs/EXPLAINER_Glossary.md             # domain vocabulary (media, reconciliation, TV, data quality)
+docs/PLAYBOOK_<Tool>.md                # one per tool, five total
+```
+
+The three existing guides were moved with `git mv` (history preserved) and renamed; `USER_GUIDE.md` → `PLAYBOOK_RROI_Manual_Backfill.md`, and likewise for Data Caveats and TV. Their bodies were left intact — only the title block changed, gaining a "Tool N of 5" line and links to the three explainers. The `PLAYBOOK_`/`EXPLAINER_` prefixes make the type obvious in a file listing and keep each group sorted together.
+
+### What was newly written
+
+- **`PLAYBOOK_Merit_Inspect.md`** — the largest gap. Documents all four check layers (missing fields, ~15 value-level rules, delivery-vs-spend per unit, informational summaries), the verdict logic, and how to read ERROR vs. REVIEW. The tool already carried an in-app `CHECKS_REFERENCE_MD`; the playbook mirrors it rather than diverging from it, and adds the reasoning the in-app version has no room for — notably *why* an expected metric per unit is what makes "spend but no delivery" a meaningful test, and why the ambiguous Knorr cases are REVIEW rather than ERROR.
+- **`PLAYBOOK_Merit_Deliver.md`** — the 18-column schema, the reconciliation contract (row counts must match exactly; nothing is de-duplicated), the formula scan and why it matters (a formula cell renders as a normal value on screen but can go stale or blank on the recipient's machine), and the three duplicate verdicts.
+- **`EXPLAINER_Overview.md`** — the problem M.E.R.I.T was built for, framed as *variance* rather than only time cost; the five tools; and the five design principles, each with the concrete evidence behind it (the zero-false-positive TV correction rules, the two wrong spec figures found by testing against real files).
+- **`EXPLAINER_Monthly_Workflow.md`** — the cycle as a flow diagram, then step by step. Its core is the **correct vs. disclose** decision table (backfill when you can point to where the number came from; caveat when you'd be estimating), which was previously implicit and undocumented despite being the most consequential judgement in the cycle.
+- **`EXPLAINER_Glossary.md`** — ~70 terms across media, reconciliation, TV and data quality.
+- **`README.md`** — entry point, doc index, run instructions (including the full-path interpreter caveat for this machine), repo layout, editable reference data, and the test suite table.
+
+### Verified
+
+Both link layers were checked programmatically rather than by eye: **48 internal file links** all resolve to existing files, and **8 anchor links** all resolve to real headings.
+
+The anchor check needed GitHub's exact slug algorithm to be trustworthy. A first pass reported two false failures because it collapsed runs of whitespace; GitHub replaces **each** space with a hyphen individually, so a heading containing an em-dash (`Step 2 — Route each finding`) yields a **double** hyphen in its slug (`step-2--route-each-finding`). The links were correct and the checker was wrong.
+
+### Not changed
+
+`estado_actual_app.md` stays as it is — the engineering changelog, written for whoever maintains the code, and deliberately a different document from the explainers. Sections written earlier still describe the app as it stood when they were written; only §1's file-structure listing was updated, since that one is meant to describe the present.

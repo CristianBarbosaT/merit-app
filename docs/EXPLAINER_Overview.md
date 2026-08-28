@@ -4,7 +4,7 @@
 
 A high-level explainer: what M.E.R.I.T. is, the problem it solves, and what sits inside it. Written to be read by someone who will never open the code.
 
-> Hands-on instructions live in the five **playbooks** — see the [index](../README.md). Terms you don't recognise are in the [Glossary](EXPLAINER_Glossary.md).
+> Hands-on instructions live in the five **playbooks** — see the [index](../README.md). Terms you don't recognise are in the [Glossary](EXPLAINER_Glossary.md). For licensing, hosting and data-security questions, see [Governance & Deployment](EXPLAINER_Governance_and_Deployment.md).
 
 ---
 
@@ -115,3 +115,5 @@ Two areas are built and tested but deliberately not yet exposed in the UI:
 
 - **TV reconciliation and auto-correction** — the full compare-against-platform-export workflow, scoped out of the current tool to keep it to a simple upload-and-standardize flow.
 - **Day-level caveat detection** — removed on purpose, so every caveat line reflects a genuine whole-month gap rather than a single off day inside an otherwise-complete month.
+
+The app is distributed via SharePoint, with Git used for version history. Confirming organisational tool approval and switching off Streamlit's default usage telemetry are tracked as open items in [Governance & Deployment](EXPLAINER_Governance_and_Deployment.md#open-action-items).

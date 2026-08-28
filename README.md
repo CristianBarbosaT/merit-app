@@ -12,9 +12,12 @@ An internal web app covering the monthly media delivery-reporting cycle in five 
 |---|---|
 | Understand what this is and why it exists | **[Overview](docs/EXPLAINER_Overview.md)** |
 | See how the tools fit together across a month | **[Monthly Workflow](docs/EXPLAINER_Monthly_Workflow.md)** |
+| Answer licensing, hosting or data-security questions | **[Governance & Deployment](docs/EXPLAINER_Governance_and_Deployment.md)** |
 | Look up an unfamiliar term | **[Glossary](docs/EXPLAINER_Glossary.md)** |
 | Actually operate a tool | The **playbook** for that tool, below |
 | Understand a technical decision | [`estado_actual_app.md`](estado_actual_app.md) |
+
+**New to the team?** Read in this order: [Overview](docs/EXPLAINER_Overview.md) → [Monthly Workflow](docs/EXPLAINER_Monthly_Workflow.md) → the playbook for whichever tool you'll run first. Keep the [Glossary](docs/EXPLAINER_Glossary.md) open alongside. That path is also the natural running order for a walkthrough session.
 
 ---
 
@@ -72,6 +75,7 @@ merit_V1/
 ├── docs/
 │   ├── EXPLAINER_Overview.md
 │   ├── EXPLAINER_Monthly_Workflow.md
+│   ├── EXPLAINER_Governance_and_Deployment.md
 │   ├── EXPLAINER_Glossary.md
 │   └── PLAYBOOK_*.md            # One per tool
 ├── estado_actual_app.md         # Engineering changelog — decisions and their reasoning

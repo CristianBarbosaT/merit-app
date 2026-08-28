@@ -678,3 +678,33 @@ The anchor check needed GitHub's exact slug algorithm to be trustworthy. A first
 ### Not changed
 
 `estado_actual_app.md` stays as it is — the engineering changelog, written for whoever maintains the code, and deliberately a different document from the explainers. Sections written earlier still describe the app as it stood when they were written; only §1's file-structure listing was updated, since that one is meant to describe the present.
+
+## 22. Governance documentation, from the stakeholder review (2026-08-27)
+
+### Why
+
+A transcript of the stakeholder review surfaced questions the documentation didn't answer. Two were raised directly by leadership and are genuine blockers to wider rollout: **whether the tools are organisationally approved (licensing)**, and **where the app is hosted / how it's distributed**. Neither was written down anywhere.
+
+### `docs/EXPLAINER_Governance_and_Deployment.md`
+
+New explainer covering the operational side rather than the functional one. Its claims were **verified against the codebase and environment rather than asserted**:
+
+| Claim | How it was checked |
+|---|---|
+| No data is transmitted anywhere | No network-calling library is imported or used anywhere in `app.py` or `tools/` |
+| No user data is written to disk | The only two `open()` calls in the codebase are read-only (`"rb"`, `"r"`) and both read bundled reference files — the caveat template and `tv_mappings.json` |
+| The dependency stack is permissively licensed | Read from installed package metadata: streamlit 1.59.2 **Apache-2.0**, pandas 3.0.3 **BSD-3-Clause**, openpyxl 3.1.5 **MIT**, numpy 2.5.1 **BSD-3-Clause** (with 0BSD/MIT/Zlib/CC0 components) |
+
+**One finding worth acting on.** There is no `.streamlit/config.toml`, so Streamlit's default `gatherUsageStats` telemetry is **on**. It carries no file contents or business data, but it is the only outbound connection the stack makes, and it is directly relevant to the concern raised. It is documented prominently with its two-line fix and listed as an open action item — **deliberately not applied**, since silently changing runtime behaviour was outside the scope of a documentation task.
+
+The document is careful to separate **licence permits use** (verified fact) from **organisation approves use** (open question). Permissive licensing is necessary but not sufficient, and conflating the two would give a false assurance on exactly the point leadership asked about.
+
+The distribution decision from the review — **SharePoint for distribution, Git for version history** — is recorded with the reasoning for keeping both: SharePoint answers "how do I get it" for people who don't use Git, Git answers "what changed and why", which SharePoint cannot reconstruct. Six open action items are tracked, none claimed as done.
+
+### Playbook reinforcement
+
+`PLAYBOOK_Merit_Inspect.md` gained **"A note on the rare ones"**. During the review the negative-cost rule was queried as possibly theoretical, and a stakeholder confirmed it does occur periodically and turns up in unexpected places. That is the strongest available argument for the rule's existence — infrequent, unpredictable in location, unambiguous once seen — so it is now recorded as the worked example of why these checks are automated at all, alongside the same reasoning for the inventory-code rules.
+
+### Also
+
+`README.md` gained the governance explainer in its index and a **"New to the team?"** reading path (Overview → Monthly Workflow → the relevant playbook, Glossary alongside), which doubles as the running order for the walkthrough session requested in the review. Link validation re-run across all 11 markdown files: **56 file links and 10 anchor links, zero broken.**

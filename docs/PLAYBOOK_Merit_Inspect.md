@@ -108,6 +108,14 @@ Listed row by row, so you can go and look at each one.
 
 > **Why some Knorr rules are "needs review" rather than errors.** Where the Creative Name is absent or its keywords are ambiguous, the tool cannot determine the right answer — so it says so instead of guessing. That distinction is deliberate throughout the app: an ERROR means *this is wrong*, a REVIEW means *this needs a human*.
 
+### A note on the rare ones
+
+Several of these rules catch things that are **uncommon but real** — which is precisely the argument for automating them.
+
+**Negative cost** is the clearest example. It's rare enough that you can work on this data for a long time without seeing one, and it was queried during the stakeholder review as possibly theoretical. It isn't: it was confirmed on the call that it does happen periodically, and that it turns up *in unexpected places*. That combination — infrequent, unpredictable in where it appears, and unambiguous once you see it — is the ideal case for a machine check. A person scanning tens of thousands of rows will not reliably catch it; a rule catches it every time, for free.
+
+The same reasoning covers the inventory-code checks (**Social channel mismatch**, **X Corp partner missing**, **Partner missing companion**). These encode conventions the team already knows but that are easy to forget under time pressure — an inventory code implying Social on a row filed under Video, or a Twitter/X placement whose partner name wasn't updated to X Corp. Nothing here is a new rule; it's the existing rules, applied consistently rather than from memory.
+
 ### Layer 3 — Delivery vs. spend
 
 The most valuable layer, and the one hardest to do by eye.
